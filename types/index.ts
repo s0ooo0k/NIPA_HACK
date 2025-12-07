@@ -37,6 +37,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   imageUrl?: string;
+  videoUrl?: string;
 }
 
 // 감정 분석 결과

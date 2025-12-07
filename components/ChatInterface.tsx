@@ -47,6 +47,14 @@ export default function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsPlayingAudio(false);
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, ctaStage, simulationResult]);
@@ -98,6 +106,7 @@ export default function ChatInterface({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isLoading) {
+      stopAudio();
       onSendMessage(input.trim());
       setInput("");
     }
@@ -113,7 +122,10 @@ export default function ChatInterface({
             <p className="text-xs text-gray-500">{t("app.subtitle")}</p>
           </div>
           <button
-            onClick={onChangeMode}
+            onClick={() => {
+              stopAudio();
+              onChangeMode();
+            }}
             className="px-3 py-1.5 bg-white/70 hover:bg-white text-xs font-semibold flex items-center gap-2 rounded-full shadow-sm transition-all border border-black/5"
           >
             {mode === "text"
@@ -164,9 +176,14 @@ export default function ChatInterface({
               }`}
             >
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              {msg.imageUrl && (
+              {msg.videoUrl && (
+                <div className="mt-2.5 overflow-hidden rounded-xl bg-black">
+                  <video src={msg.videoUrl} controls className="w-full h-full object-cover" />
+                </div>
+              )}
+              {!msg.videoUrl && msg.imageUrl && (
                 <div className="mt-2.5 overflow-hidden rounded-xl">
-                  <img src={msg.imageUrl} alt="Simulation" className="w-full h-full object-cover"/>
+                  <img src={msg.imageUrl} alt="Simulation" className="w-full h-full object-cover" />
                 </div>
               )}
             </div>
@@ -194,10 +211,22 @@ export default function ChatInterface({
               {lang === "ko" ? "다음 단계를 선택하세요" : "Choose the next step"}
             </p>
             <div className="flex flex-wrap gap-2">
-              <button onClick={onAnalyzeCTA} className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform">
+              <button
+                onClick={() => {
+                  stopAudio();
+                  onAnalyzeCTA();
+                }}
+                className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform"
+              >
                 {lang === "ko" ? "대화 분석" : "Analyze Conversation"}
               </button>
-              <button onClick={onContinueCTA} className="px-4 py-1.5 rounded-full bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors border border-black/10">
+              <button
+                onClick={() => {
+                  stopAudio();
+                  onContinueCTA();
+                }}
+                className="px-4 py-1.5 rounded-full bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors border border-black/10"
+              >
                 {lang === "ko" ? "채팅 계속" : "Continue Chat"}
               </button>
             </div>
@@ -210,10 +239,23 @@ export default function ChatInterface({
               {lang === "ko" ? "어떤 시뮬레이션을 원하세요?" : "Which simulation would you like?"}
             </p>
             <div className="flex flex-wrap gap-2">
-              <button onClick={onSimulateCurrent} className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform disabled:opacity-60" disabled={simulationLoading}>
+              <button
+                onClick={() => {
+                  stopAudio();
+                  onSimulateCurrent();
+                }}
+                className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform disabled:opacity-60"
+                disabled={simulationLoading}
+              >
                 {simulationLoading ? "생성 중..." : "현재 상황"}
               </button>
-              <button onClick={onSimulateSimilar} className="px-4 py-1.5 rounded-full bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors border border-black/10">
+              <button
+                onClick={() => {
+                  stopAudio();
+                  onSimulateSimilar();
+                }}
+                className="px-4 py-1.5 rounded-full bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors border border-black/10"
+              >
                 비슷한 상황
               </button>
             </div>

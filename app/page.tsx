@@ -6,7 +6,6 @@ import ModeSelector from "@/components/ModeSelector";
 import EmotionAnalysis from "@/components/EmotionAnalysis";
 import SolutionCard from "@/components/SolutionCard";
 import LearningOptions from "@/components/LearningOptions";
-import VideoSimulation from "@/components/VideoSimulation";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -24,9 +23,6 @@ export default function Home() {
   const [analysis, setAnalysis] = useState<EmotionAnalysisType | null>(null);
   const [solution, setSolution] = useState<Solution | null>(null);
   const [relatedScenarios, setRelatedScenarios] = useState<Scenario[]>([]);
-  const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(
-    null
-  );
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [assistantTurns, setAssistantTurns] = useState(0);
   const [ctaStage, setCtaStage] = useState<"none" | "offer" | "post-analysis">(
@@ -178,19 +174,11 @@ export default function Home() {
     }
   };
 
-  const handleSelectScenario = (scenarioId: string) => {
-    const scenario = relatedScenarios.find((s) => s.id === scenarioId);
-    if (scenario) {
-      setSelectedScenario(scenario);
-    }
-  };
-
   const handleNewConversation = () => {
     setMessages([]);
     setAnalysis(null);
     setSolution(null);
     setRelatedScenarios([]);
-    setSelectedScenario(null);
     setShowAnalysis(false);
     setMode(null); // 모드 선택 화면으로 돌아감
     setAssistantTurns(0);
@@ -232,17 +220,19 @@ export default function Home() {
 
       if (!res.ok) throw new Error("Simulation failed");
       const data = await res.json();
+      const isVideo = data.url && data.url.endsWith(".mp4");
       setSimulationResult({
         image: data.fallbackImage,
         url: data.url,
         source: data.source,
       });
-      // Push image as chat message
+      // Push media as chat message
       const simMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "assistant",
         content: "시뮬레이션 결과입니다. 이 상황에서 어떻게 대답할까요?",
-        imageUrl: data.fallbackImage || data.url,
+        imageUrl: isVideo ? undefined : data.fallbackImage || data.url,
+        videoUrl: isVideo ? data.url : undefined,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, simMessage]);
@@ -263,9 +253,7 @@ export default function Home() {
   const handleSimulateSimilar = () => {
     if (relatedScenarios.length > 0) {
       const scenario = relatedScenarios[0];
-      setSelectedScenario(scenario);
       setShowAnalysis(true);
-      // Fire video/image generation for similar scenario
       fetch("/api/video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -274,11 +262,13 @@ export default function Home() {
         .then(async (res) => {
           if (!res.ok) throw new Error("Similar simulation failed");
           const data = await res.json();
+          const isVideo = data.url && data.url.endsWith(".mp4");
           const simMsg: ChatMessage = {
             id: Date.now().toString(),
             role: "assistant",
             content: `비슷한 상황 시뮬레이션입니다. 이럴 때 뭐라고 답할까요?`,
-            imageUrl: data.fallbackImage || data.url,
+            imageUrl: isVideo ? undefined : data.fallbackImage || data.url,
+            videoUrl: isVideo ? data.url : undefined,
             timestamp: new Date(),
           };
           setMessages((prev) => [...prev, simMsg]);
@@ -286,6 +276,34 @@ export default function Home() {
           setEvaluationContext(`비슷한 상황: ${scenario.korean}`);
         })
         .catch((err) => console.error(err));
+    }
+  };
+
+  const handleSelectScenario = async (scenarioId: string) => {
+    const scenario = relatedScenarios.find((s) => s.id === scenarioId);
+    if (!scenario) return;
+    try {
+      const res = await fetch("/api/video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenarioId: scenario.id }),
+      });
+      if (!res.ok) throw new Error("Simulation failed");
+      const data = await res.json();
+      const isVideo = data.url && data.url.endsWith(".mp4");
+      const simMsg: ChatMessage = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: `${scenario.korean} 시뮬레이션입니다. 이럴 때 뭐라고 답할까요?`,
+        imageUrl: isVideo ? undefined : data.fallbackImage || data.url,
+        videoUrl: isVideo ? data.url : undefined,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, simMsg]);
+      setEvaluationPending(true);
+      setEvaluationContext(`추천 시나리오: ${scenario.korean}`);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -371,12 +389,6 @@ export default function Home() {
                 <>
                   <EmotionAnalysis analysis={analysis} />
                   {solution && <SolutionCard solution={solution} />}
-                  {selectedScenario && (
-                    <VideoSimulation
-                      scenarioId={selectedScenario.id}
-                      scenarioTitle={selectedScenario.korean}
-                    />
-                  )}
                   {relatedScenarios.length > 0 && (
                     <LearningOptions
                       scenarios={relatedScenarios}

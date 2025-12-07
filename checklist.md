@@ -1,5 +1,0 @@
-- [x] Add inline CTA buttons after 3 assistant replies: continue chat / analyze & simulate
-- [x] Conversation-based prompt generation for current simulation (LLM summary → prompt)
-- [x] Similar scenario selection: recommend from data + play canned/video placeholder
-- [x] Front UI: yellow/gradient styling, transparent cards (Apple/Toss vibe)
-- [x] Error/loader states for new buttons and simulations
