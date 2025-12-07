@@ -7,7 +7,7 @@ const TOGETHER_BASE_URL =
 const TOGETHER_VIDEO_MODEL =
   process.env.TOGETHER_VIDEO_MODEL || "openai/sora-2";
 const TOGETHER_IMAGE_MODEL =
-  process.env.TOGETHER_IMAGE_MODEL || "black-forest-labs/FLUX.1-krea-dev";
+  process.env.TOGETHER_IMAGE_MODEL || "google/flash-image-2.5";
 
 const DEFAULT_HEADERS = {
   Authorization: `Bearer ${TOGETHER_API_KEY}`,
@@ -119,7 +119,6 @@ export async function generateTogetherImage(prompt: string): Promise<string> {
     body: JSON.stringify({
       model: TOGETHER_IMAGE_MODEL,
       prompt,
-      steps: 10,
       n: 1,
     }),
   });
