@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "@/types";
 import VoiceRecorder from "./VoiceRecorder";
 import { useLanguage } from "@/context/LanguageContext";
+import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -103,88 +104,49 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white/80 backdrop-blur rounded-2xl shadow-xl overflow-hidden border border-white/40">
+    <div className="flex flex-col h-full bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 text-gray-900 p-4 sm:p-6">
+      <div className="p-4 border-b border-black/5">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold">{t("app.title")} AI</h2>
-            <p className="text-sm sm:text-base opacity-90 mt-1">
-              {t("app.subtitle")}
-            </p>
+          <div className="pl-2">
+            <h2 className="text-lg font-bold text-gray-800">{t("app.title")} AI</h2>
+            <p className="text-xs text-gray-500">{t("app.subtitle")}</p>
           </div>
           <button
             onClick={onChangeMode}
-            className="px-4 py-2 bg-white/70 hover:bg-white text-sm font-medium flex items-center gap-2 rounded-full shadow-sm transition-all"
+            className="px-3 py-1.5 bg-white/70 hover:bg-white text-xs font-semibold flex items-center gap-2 rounded-full shadow-sm transition-all border border-black/5"
           >
             {mode === "text"
-              ? `🗣 ${lang === "ko" ? "음성으로 전환" : "Switch to Voice"}`
-              : `💬 ${lang === "ko" ? "채팅으로 전환" : "Switch to Text"}`}
+              ? `🗣 ${lang === "ko" ? "음성으로" : "To Voice"}`
+              : `💬 ${lang === "ko" ? "채팅으로" : "To Text"}`}
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-gradient-to-br from-yellow-50 via-white to-amber-50">
+      <div className="flex-1 overflow-y-auto p-6 space-y-5">
         {messages.length === 0 && (
-          <div className="text-center text-gray-600 mt-8">
-            <p className="text-lg mb-4">
-              {lang === "ko" ? "안녕하세요!" : "Hello!"}
-            </p>
-            <p className="text-sm sm:text-base">
+          <div className="text-center text-gray-500 my-8">
+            <p className="font-semibold mb-4">
               {lang === "ko"
-                ? "한국에서 겪은 문화적 갈등이나 헷갈렸던 상황을 들려주세요."
-                : "Share any cultural conflicts or confusing situations you've experienced in Korea."}
+                ? "어떤 상황에 대해 이야기하고 싶으신가요?"
+                : "What situation would you like to talk about?"}
             </p>
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-              <button
-                onClick={() =>
-                  onSendMessage(
-                    lang === "ko"
-                      ? "교수님이 '밥 먹었어?'라고 하셨어요"
-                      : "My professor asked me if I ate"
-                  )
-                }
-                className="p-3 bg-amber-100 rounded-lg text-sm text-left hover:bg-amber-200 transition-colors"
-              >
-                {lang === "ko" ? "교수님 인사가 헷갈려요" : "Confused by professor's greeting"}
-              </button>
-              <button
-                onClick={() =>
-                  onSendMessage(
-                    lang === "ko"
-                      ? "회식 문화가 어려워요"
-                      : "Company dinner culture is difficult"
-                  )
-                }
-                className="p-3 bg-amber-100 rounded-lg text-sm text-left hover:bg-amber-200 transition-colors"
-              >
-                {lang === "ko" ? "회식 문화가 어려워요" : "Struggling with company dinners"}
-              </button>
-              <button
-                onClick={() =>
-                  onSendMessage(
-                    lang === "ko"
-                      ? "조별과제 역할 분담이 처음이에요"
-                      : "First time doing group projects"
-                  )
-                }
-                className="p-3 bg-amber-100 rounded-lg text-sm text-left hover:bg-amber-200 transition-colors"
-              >
-                {lang === "ko" ? "조별과제가 처음이에요" : "New to group projects"}
-              </button>
-              <button
-                onClick={() =>
-                  onSendMessage(
-                    lang === "ko"
-                      ? "이웃이 어디 가냐고 물어봐서 놀랐어요"
-                      : "Neighbor asked where I'm going"
-                  )
-                }
-                className="p-3 bg-amber-100 rounded-lg text-sm text-left hover:bg-amber-200 transition-colors"
-              >
-                {lang === "ko" ? "일상 대화가 헷갈려요" : "Daily conversations are confusing"}
-              </button>
+            <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
+              {[
+                { ko: "교수님 인사가 헷갈려요", en: "Confused by professor's greeting", msg: "교수님이 '밥 먹었어?'라고 하셨어요" },
+                { ko: "회식 문화가 어려워요", en: "Struggling with company dinners", msg: "회식 문화가 어려워요" },
+                { ko: "조별과제가 처음이에요", en: "New to group projects", msg: "조별과제 역할 분담이 처음이에요" },
+                { ko: "일상 대화가 헷갈려요", en: "Daily conversations are confusing", msg: "이웃이 어디 가냐고 물어봐서 놀랐어요" },
+              ].map((item) => (
+                <button
+                  key={item.ko}
+                  onClick={() => onSendMessage(lang === 'ko' ? item.msg : item.en)}
+                  className="p-3 bg-white shadow-md rounded-full hover:bg-gray-50 hover:shadow-lg transition-all"
+                >
+                  {lang === "ko" ? item.ko : item.en}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -192,103 +154,68 @@ export default function ChatInterface({
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex items-end gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 ${
+              className={`max-w-[80%] rounded-3xl px-5 py-3 shadow-md ${
                 msg.role === "user"
-                  ? "bg-amber-500 text-gray-900 rounded-br-sm shadow-md"
-                  : "bg-white/80 backdrop-blur text-gray-800 rounded-bl-sm border border-amber-100 shadow-sm"
+                  ? "bg-primary text-white rounded-br-lg"
+                  : "bg-white text-gray-800 rounded-bl-lg"
               }`}
             >
-              <p className="text-sm sm:text-base whitespace-pre-wrap">
-                {msg.content}
-              </p>
+              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
               {msg.imageUrl && (
-                <div className="mt-3 overflow-hidden rounded-xl border border-amber-100">
-                  <img
-                    src={msg.imageUrl}
-                    alt="Simulation"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="mt-2.5 overflow-hidden rounded-xl">
+                  <img src={msg.imageUrl} alt="Simulation" className="w-full h-full object-cover"/>
                 </div>
               )}
-              <p
-                className={`text-xs mt-1 ${msg.role === "user" ? "text-amber-100" : "text-gray-500"}`}
-              >
-                {new Date(msg.timestamp).toLocaleTimeString("ko-KR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
             </div>
+            <p className="text-xs text-gray-400 mb-1">
+              {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </p>
           </div>
         ))}
 
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-white/80 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm border border-amber-100">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+            <div className="bg-white rounded-3xl rounded-bl-lg px-4 py-3 shadow-md">
+              <div className="flex space-x-1.5">
+                <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-100"></div>
+                <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-200"></div>
               </div>
             </div>
           </div>
         )}
 
         {ctaStage === "offer" && (
-          <div className="flex justify-start">
-            <div className="bg-white/80 backdrop-blur border border-amber-100 rounded-2xl px-4 py-3 shadow-sm">
-              <p className="text-sm font-semibold text-gray-800 mb-2">
-                {lang === "ko" ? "다음 단계 선택" : "Choose next step"}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={onContinueCTA}
-                  className="px-3 py-2 rounded-full bg-amber-500 text-gray-900 text-sm font-medium hover:bg-amber-400 transition-all"
-                >
-                  {lang === "ko" ? "계속 채팅하기" : "Continue chat"}
-                </button>
-                <button
-                  onClick={onAnalyzeCTA}
-                  className="px-3 py-2 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-all"
-                >
-                  {lang === "ko" ? "대화 분석·시뮬레이션" : "Analyze & simulate"}
-                </button>
-              </div>
+          <div className="bg-white/80 backdrop-blur border border-black/5 rounded-2xl px-4 py-3 shadow-sm max-w-sm">
+            <p className="text-sm font-semibold text-gray-800 mb-2">
+              {lang === "ko" ? "다음 단계를 선택하세요" : "Choose the next step"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={onAnalyzeCTA} className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform">
+                {lang === "ko" ? "대화 분석" : "Analyze Conversation"}
+              </button>
+              <button onClick={onContinueCTA} className="px-4 py-1.5 rounded-full bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors border border-black/10">
+                {lang === "ko" ? "채팅 계속" : "Continue Chat"}
+              </button>
             </div>
           </div>
         )}
 
         {ctaStage === "post-analysis" && (
-          <div className="flex justify-start">
-            <div className="bg-white/80 backdrop-blur border border-amber-100 rounded-2xl px-4 py-3 shadow-sm">
-              <p className="text-sm font-semibold text-gray-800 mb-2">
-                {lang === "ko"
-                  ? "어떤 시뮬레이션을 볼까요?"
-                  : "Pick a simulation option"}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={onSimulateCurrent}
-                  className="px-3 py-2 rounded-full bg-amber-500 text-gray-900 text-sm font-medium hover:bg-amber-400 transition-all disabled:opacity-60"
-                  disabled={simulationLoading}
-                >
-                  {simulationLoading ? "생성 중..." : "현재 상황 시뮬레이션"}
-                </button>
-                <button
-                  onClick={onSimulateSimilar}
-                  className="px-3 py-2 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-all"
-                >
-                  비슷한 상황 시뮬레이션
-                </button>
-                {evaluationPending && (
-                  <span className="text-xs text-amber-700">
-                    답변을 입력하면 점수와 피드백을 드릴게요.
-                  </span>
-                )}
-              </div>
+          <div className="bg-white/80 backdrop-blur border border-black/5 rounded-2xl px-4 py-3 shadow-sm max-w-sm">
+            <p className="text-sm font-semibold text-gray-800 mb-2">
+              {lang === "ko" ? "어떤 시뮬레이션을 원하세요?" : "Which simulation would you like?"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={onSimulateCurrent} className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform disabled:opacity-60" disabled={simulationLoading}>
+                {simulationLoading ? "생성 중..." : "현재 상황"}
+              </button>
+              <button onClick={onSimulateSimilar} className="px-4 py-1.5 rounded-full bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors border border-black/10">
+                비슷한 상황
+              </button>
             </div>
           </div>
         )}
@@ -296,41 +223,30 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력 영역 */}
-      <div className="border-t border-gray-200 p-4 sm:p-6 bg-white/70 backdrop-blur">
+      {/* Input Area */}
+      <div className="p-4 bg-white/60 border-t border-black/5">
         {mode === "voice" ? (
-          <div className="flex flex-col items-center">
-            <VoiceRecorder
-              onTranscript={(text) => {
-                onSendMessage(text);
-              }}
-              isLoading={isLoading || isPlayingAudio}
-            />
-            {isPlayingAudio && (
-              <p className="text-amber-600 text-sm mt-4 font-medium">
-                {lang === "ko" ? "▶ AI 답변 재생 중..." : "▶ Playing AI response..."}
-              </p>
-            )}
+          <div className="flex flex-col items-center justify-center h-24">
+            <VoiceRecorder onTranscript={(text) => onSendMessage(text)} isLoading={isLoading || isPlayingAudio} />
+            {isPlayingAudio && <p className="text-primary text-xs mt-3 font-medium">{lang === "ko" ? "AI 답변 재생 중..." : "Playing AI response..."}</p>}
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={t("chat.placeholder")}
-                disabled={isLoading}
-                className="flex-1 px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:bg-gray-100 text-sm sm:text-base"
-              />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="px-6 py-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm sm:text-base shadow-sm"
-              >
-                {t("chat.send")}
-              </button>
-            </div>
+          <form onSubmit={handleSubmit} className="flex items-center gap-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={t("chat.placeholder")}
+              disabled={isLoading}
+              className="flex-1 w-full px-5 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center hover:scale-110 disabled:scale-100 disabled:bg-gray-300 transition-all"
+            >
+              <PaperAirplaneIcon className="w-6 h-6" />
+            </button>
           </form>
         )}
       </div>

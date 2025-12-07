@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { MicrophoneIcon, StopIcon } from "@heroicons/react/24/solid";
 
 interface VoiceRecorderProps {
   onTranscript: (text: string) => void;
   isLoading: boolean;
 }
 
-export default function VoiceRecorder({
-  onTranscript,
-  isLoading,
-}: VoiceRecorderProps) {
+export default function VoiceRecorder({ onTranscript, isLoading }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -38,7 +36,7 @@ export default function VoiceRecorder({
         });
         await transcribeAudio(audioBlob);
 
-        // 스트림 정리
+        // Clean up the stream
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -46,7 +44,7 @@ export default function VoiceRecorder({
       setIsRecording(true);
     } catch (error) {
       console.error("Error starting recording:", error);
-      alert("마이크 접근 권한이 필요합니다.");
+      alert("Microphone access is required.");
     }
   };
 
@@ -74,41 +72,39 @@ export default function VoiceRecorder({
       onTranscript(data.text);
     } catch (error) {
       console.error("Error transcribing audio:", error);
-      alert("음성 인식에 실패했습니다. 다시 시도해주세요.");
+      alert("Failed to transcribe audio. Please try again.");
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-3">
       <button
         onClick={isRecording ? stopRecording : startRecording}
         disabled={isLoading || isProcessing}
-        className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 ${
           isRecording
             ? "bg-red-500 hover:bg-red-600 animate-pulse"
-            : "bg-gradient-to-r from-purple-500 to-purple-600 hover:shadow-lg hover:scale-110"
+            : "bg-primary hover:scale-110"
         }`}
       >
         {isProcessing ? (
-          <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
         ) : (
-          <div className="text-3xl">{isRecording ? "⏹️" : "🎤"}</div>
+          isRecording ? <StopIcon className="w-8 h-8 text-white" /> : <MicrophoneIcon className="w-9 h-9 text-white" />
         )}
       </button>
 
-      <div className="text-center">
+      <div className="text-center h-5">
         {isRecording && (
-          <p className="text-red-500 font-medium animate-pulse">녹음 중...</p>
+          <p className="text-red-500 font-medium animate-pulse text-sm">Recording...</p>
         )}
         {isProcessing && (
-          <p className="text-purple-600 font-medium">음성 인식 중...</p>
+          <p className="text-primary font-medium text-sm">Processing audio...</p>
         )}
         {!isRecording && !isProcessing && (
-          <p className="text-gray-600 text-sm">
-            마이크 버튼을 눌러 말씀해주세요
-          </p>
+          <p className="text-gray-500 text-sm">Press the mic to talk</p>
         )}
       </div>
     </div>

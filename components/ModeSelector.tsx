@@ -10,58 +10,45 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg shadow-lg p-8">
-      <div className="text-center mb-8">
-        <div className="text-6xl mb-4">🌉</div>
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+    <div className="flex flex-col items-center justify-center h-full w-full">
+      <div className="text-center mb-10">
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">
           {t("app.title")}
         </h2>
-        <p className="text-gray-600 text-lg">
-          {t("mode.question")}
-        </p>
+        <p className="text-gray-500 text-lg">{t("mode.question")}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-        {/* 채팅 모드 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-xl">
+        {/* Text Mode */}
         <button
           onClick={() => onSelectMode("text")}
-          className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:scale-105"
+          className="group bg-white rounded-3xl p-8 text-center transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:border-primary border-4 border-transparent"
         >
-          <div className="flex flex-col items-center text-center">
-            <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">
-              💬
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              {t("mode.text")}
-            </h3>
-            <p className="text-gray-600 text-sm">
-              {t("mode.text.desc")}
-            </p>
+          <div className="text-7xl mb-5 transition-transform duration-300 group-hover:scale-110">
+            💬
           </div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600"></div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-1">
+            {t("mode.text")}
+          </h3>
+          <p className="text-gray-500 text-sm">{t("mode.text.desc")}</p>
         </button>
 
-        {/* 음성 모드 */}
+        {/* Voice Mode */}
         <button
           onClick={() => onSelectMode("voice")}
-          className="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:scale-105"
+          className="group bg-white rounded-3xl p-8 text-center transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:border-primary border-4 border-transparent"
         >
-          <div className="flex flex-col items-center text-center">
-            <div className="text-6xl mb-4 group-hover:scale-110 transition-transform">
-              🎤
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              {t("mode.voice")}
-            </h3>
-            <p className="text-gray-600 text-sm">
-              {t("mode.voice.desc")}
-            </p>
+          <div className="text-7xl mb-5 transition-transform duration-300 group-hover:scale-110">
+            🎤
           </div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 to-purple-600"></div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-1">
+            {t("mode.voice")}
+          </h3>
+          <p className="text-gray-500 text-sm">{t("mode.voice.desc")}</p>
         </button>
       </div>
 
-      <p className="text-gray-500 text-sm mt-8 text-center max-w-md">
+      <p className="text-gray-500 text-sm mt-10 text-center max-w-md">
         {t("mode.footer")}
       </p>
     </div>

@@ -290,28 +290,28 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-100">
-      {/* 헤더 */}
-      <header className="bg-white/80 backdrop-blur border-b border-amber-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+    <main className="min-h-screen bg-[var(--app-bg)]">
+      {/* Header */}
+      <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
-              <div className="text-3xl">🌉</div>
+              <div className="text-4xl">🌉</div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-700 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
                   {t("app.title")}
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-500">
                   {t("app.subtitle")}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <LanguageSelector />
-              {showAnalysis && (
+              {mode !== null && (
                 <button
                   onClick={handleNewConversation}
-                  className="px-4 py-2 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-full hover:shadow-lg transition-all text-sm font-medium"
+                  className="px-4 py-2 bg-primary text-white rounded-full hover:shadow-lg hover:scale-105 transition-all text-sm font-semibold"
                 >
                   {t("chat.newChat")}
                 </button>
@@ -321,17 +321,17 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 메인 컨텐츠 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {mode === null ? (
-          // 모드 선택 화면
-          <div className="h-[calc(100vh-12rem)]">
+          // Mode Selection Screen
+          <div className="flex items-center justify-center h-[calc(100vh-15rem)]">
             <ModeSelector onSelectMode={handleSelectMode} />
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 왼쪽: 채팅 인터페이스 */}
-            <div className="lg:sticky lg:top-6 h-[calc(100vh-12rem)]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left: Chat Interface */}
+            <div className="h-[calc(100vh-12rem)]">
               <ChatInterface
                 messages={messages}
                 onSendMessage={handleSendMessage}
@@ -349,20 +349,20 @@ export default function Home() {
               />
             </div>
 
-            {/* 오른쪽: 분석 결과 및 솔루션 */}
+            {/* Right: Analysis & Solution */}
             <div className="space-y-6">
               {!showAnalysis && (
-                <div className="bg-white/85 backdrop-blur rounded-2xl shadow-xl p-8 text-center border border-amber-100">
-                  <div className="text-6xl mb-4">💬</div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-8 text-center">
+                  <div className="text-6xl mb-4 animate-bounce">💬</div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     {lang === "ko"
-                      ? "어떤 이야기를 나눠볼까요?"
-                      : "What would you like to talk about?"}
+                      ? "어떤 대화가 고민인가요?"
+                      : "What conversation is on your mind?"}
                   </h2>
                   <p className="text-gray-600 max-w-md mx-auto">
                     {lang === "ko"
-                      ? "한국에서 겪은 문화적 갈등이나 이해하기 어려웠던 상황을 편하게 이야기해주세요. AI가 함께 이해하고 해결 방법을 찾아드립니다."
-                      : "Share your cultural conflicts or confusing situations you've experienced in Korea. Our AI will help you understand and find solutions together."}
+                      ? "한국에서 겪은 어려운 대화나 상황을 이야기해주세요. AI가 분석하고 더 나은 소통 방법을 제안해 드립니다."
+                      : "Tell us about a difficult conversation or situation you've faced in Korea. Our AI will analyze it and suggest better ways to communicate."}
                   </p>
                 </div>
               )}
@@ -370,16 +370,13 @@ export default function Home() {
               {showAnalysis && analysis && (
                 <>
                   <EmotionAnalysis analysis={analysis} />
-
                   {solution && <SolutionCard solution={solution} />}
-
                   {selectedScenario && (
                     <VideoSimulation
                       scenarioId={selectedScenario.id}
                       scenarioTitle={selectedScenario.korean}
                     />
                   )}
-
                   {relatedScenarios.length > 0 && (
                     <LearningOptions
                       scenarios={relatedScenarios}
@@ -393,13 +390,13 @@ export default function Home() {
         )}
       </div>
 
-      {/* 푸터 */}
-      <footer className="bg-white/80 backdrop-blur border-t border-amber-100 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center text-sm text-gray-600">
-            <p>© 2024 CultureBridge. 이주민의 한국 문화 적응을 돕습니다.</p>
-            <p className="mt-2 text-xs text-gray-500">
-              Powered by Google Gemini AI & Claude API
+      {/* Footer */}
+      <footer className="w-full bg-white/50 backdrop-blur-md mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="text-center text-sm text-gray-500">
+            <p>© 2024 CultureBridge. Helping you connect with Korean culture.</p>
+            <p className="mt-1 text-xs text-gray-400">
+              Powered by Google Gemini &amp; Claude
             </p>
           </div>
         </div>

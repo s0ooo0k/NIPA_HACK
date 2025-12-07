@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { VideoGenerationStatus } from "@/types";
+import { VideoCameraIcon, ExclamationTriangleIcon, ArrowPathIcon } from "@heroicons/react/24/solid";
 
 interface VideoSimulationProps {
   scenarioId: string;
   scenarioTitle: string;
 }
 
-export default function VideoSimulation({
-  scenarioId,
-  scenarioTitle,
-}: VideoSimulationProps) {
+export default function VideoSimulation({ scenarioId, scenarioTitle }: VideoSimulationProps) {
   const [status, setStatus] = useState<VideoGenerationStatus>("pending");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -48,88 +46,72 @@ export default function VideoSimulation({
     }
   };
 
+  const StatusDisplay = ({ children }: { children: React.ReactNode }) => (
+    <div className="text-white text-center p-8 flex flex-col items-center justify-center h-full">
+      {children}
+    </div>
+  );
+
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-2xl">🖼️</span>
-        <h3 className="text-xl font-bold text-gray-800">
-          AI Image Preview (Sora placeholder)
-        </h3>
+    <div className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="bg-primary/20 p-2 rounded-xl">
+          <VideoCameraIcon className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-gray-800">AI Simulation</h3>
+          <p className="text-xs text-gray-600">
+            For situation: <strong>{scenarioTitle}</strong>
+          </p>
+        </div>
       </div>
 
-      <p className="text-gray-600 mb-4 text-sm">
-        Generating a simulation for: <strong>{scenarioTitle}</strong>
-      </p>
-
-      <div className="bg-gray-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
+      <div className="bg-gray-900 rounded-2xl overflow-hidden aspect-video flex items-center justify-center">
         {status === "pending" && (
-          <div className="text-white text-center p-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mx-auto mb-4"></div>
-            <p>Preparing image request...</p>
-          </div>
+          <StatusDisplay>
+            <ArrowPathIcon className="w-10 h-10 animate-spin text-gray-400 mb-3" />
+            <p className="font-medium">Preparing simulation...</p>
+          </StatusDisplay>
         )}
 
         {status === "generating" && (
-          <div className="text-white text-center p-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-            <p className="text-lg font-medium mb-2">AI is generating an image…</p>
-            <p className="text-sm text-gray-400">
-              This usually takes a few seconds.
-            </p>
-          </div>
+          <StatusDisplay>
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent mx-auto mb-3"></div>
+            <p className="font-medium">AI is generating...</p>
+            <p className="text-sm text-gray-400">This may take a moment.</p>
+          </StatusDisplay>
         )}
 
         {status === "completed" && (videoUrl || imageUrl) && (
-          <div className="w-full h-full bg-black flex items-center justify-center">
+          <div className="w-full h-full bg-black">
             {videoUrl ? (
-              <video
-                src={videoUrl}
-                controls
-                className="w-full h-full object-cover"
-              />
+              <video src={videoUrl} controls className="w-full h-full object-cover" />
             ) : (
-              imageUrl && (
-                <img
-                  src={imageUrl}
-                  alt={`AI generated illustration for ${scenarioTitle}`}
-                  className="w-full h-full object-cover"
-                />
-              )
+              imageUrl && <img src={imageUrl} alt={`AI simulation for ${scenarioTitle}`} className="w-full h-full object-cover" />
             )}
           </div>
         )}
 
         {status === "failed" && (
-          <div className="text-white text-center p-8">
-            <div className="text-4xl mb-4">😢</div>
-            <p className="text-lg font-medium mb-2">Generation failed</p>
-            <p className="text-sm text-gray-400 mb-4">
-              Please try again in a moment.
-            </p>
+          <StatusDisplay>
+            <ExclamationTriangleIcon className="w-10 h-10 text-red-400 mb-3" />
+            <p className="font-medium">Generation Failed</p>
+            <p className="text-sm text-gray-400 mb-4">Please try again.</p>
             <button
               onClick={generateVideoOrImage}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+              className="px-4 py-2 bg-primary text-white rounded-lg transition-transform hover:scale-105"
             >
               Retry
             </button>
-          </div>
+          </StatusDisplay>
         )}
       </div>
 
       {status === "completed" && (
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-          <p className="text-sm text-gray-700">
-            <span className="font-medium">Note:</span>{" "}
-            {videoUrl
-              ? "Using Together (Sora-2) video generation or canned video."
-              : "Using Together free image fallback (FLUX.1)."}
-            {source && (
-              <>
-                {" "}
-                <span className="text-gray-500">Source: {source}</span>
-              </>
-            )}
-          </p>
+        <div className="mt-4 p-3 bg-gray-100/70 rounded-xl text-xs text-gray-600">
+          <strong>Note:</strong>{" "}
+          {videoUrl ? "Using video generation." : "Using image fallback."}
+          {source && <span className="text-gray-500"> (Source: {source})</span>}
         </div>
       )}
     </div>
