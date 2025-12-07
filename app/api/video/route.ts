@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateVideo, checkVideoStatus } from "@/lib/openai";
 import { findScenarioById } from "@/data/scenarios";
 import { generateVideoPrompt } from "@/lib/prompts";
+import { generateTogetherImage } from "@/lib/together";
 
-// 비디오 생성 요청
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -14,70 +13,47 @@ export async function POST(request: NextRequest) {
 
     if (!scenarioId) {
       return NextResponse.json(
-        { error: "시나리오 ID가 필요합니다." },
+        { error: "scenarioId is required" },
         { status: 400 }
       );
     }
 
-    // 시나리오 찾기
     const scenario = findScenarioById(scenarioId);
     if (!scenario) {
       return NextResponse.json(
-        { error: "시나리오를 찾을 수 없습니다." },
+        { error: "Scenario not found" },
         { status: 404 }
       );
     }
 
-    // 비디오 프롬프트 생성
+    // Build prompt
     let videoPrompt = scenario.videoPrompt;
-
-    // 커스텀 프롬프트가 필요한 경우
     if (sceneType !== "correct") {
       videoPrompt = generateVideoPrompt(scenario, sceneType);
     }
 
-    // 비디오 생성 요청
-    const result = await generateVideo(videoPrompt);
+    // Image-only test: generate a still image via Together and return as fallbackImage
+    const image = await generateTogetherImage(videoPrompt);
 
     return NextResponse.json({
-      videoId: result.videoId,
-      status: result.status,
       scenarioId,
+      status: "completed",
+      fallbackImage: image,
+      source: "together-image-only",
     });
   } catch (error) {
     console.error("Video generation API error:", error);
     return NextResponse.json(
-      { error: "비디오 생성 요청에 실패했습니다." },
+      { error: "Video generation failed." },
       { status: 500 }
     );
   }
 }
 
-// 비디오 생성 상태 확인
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const videoId = searchParams.get("videoId");
-
-    if (!videoId) {
-      return NextResponse.json(
-        { error: "비디오 ID가 필요합니다." },
-        { status: 400 }
-      );
-    }
-
-    const status = await checkVideoStatus(videoId);
-
-    return NextResponse.json({
-      videoId,
-      status: status.status,
-      url: status.url,
-    });
-  } catch (error) {
-    console.error("Video status API error:", error);
-    return NextResponse.json(
-      { error: "비디오 상태 확인에 실패했습니다." },
-      { status: 500 }
-    );
-  }
+// Optional status polling if needed in the future
+export async function GET() {
+  return NextResponse.json(
+    { error: "Polling not implemented. Use POST to generate." },
+    { status: 400 }
+  );
 }

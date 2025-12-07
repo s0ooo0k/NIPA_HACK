@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { VideoGenerationStatus } from "@/types";
 
 interface VideoSimulationProps {
@@ -13,36 +13,37 @@ export default function VideoSimulation({
   scenarioTitle,
 }: VideoSimulationProps) {
   const [status, setStatus] = useState<VideoGenerationStatus>("pending");
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-
-  const prompt = useMemo(() => {
-    const title = scenarioTitle || "cultural scenario";
-    return `Create a single illustrative image (no text on the image) that represents this scenario: "${title}". Use a friendly, realistic style.`;
-  }, [scenarioTitle]);
+  const [source, setSource] = useState<string | null>(null);
 
   useEffect(() => {
-    generateImage();
+    generateVideoOrImage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenarioId, prompt]);
+  }, [scenarioId]);
 
-  const generateImage = async () => {
+  const generateVideoOrImage = async () => {
     try {
       setStatus("generating");
+      setVideoUrl(null);
       setImageUrl(null);
+      setSource(null);
 
-      const response = await fetch("/api/image", {
+      const response = await fetch("/api/video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ scenarioId }),
       });
 
-      if (!response.ok) throw new Error("Image generation failed");
+      if (!response.ok) throw new Error("Generation failed");
 
       const data = await response.json();
-      setImageUrl(data.image);
-      setStatus("completed");
+      setVideoUrl(data.url || null);
+      setImageUrl(data.fallbackImage || null);
+      setSource(data.source || null);
+      setStatus(data.status || "completed");
     } catch (error) {
-      console.error("Image generation error:", error);
+      console.error("Video/image generation error:", error);
       setStatus("failed");
     }
   };
@@ -57,7 +58,7 @@ export default function VideoSimulation({
       </div>
 
       <p className="text-gray-600 mb-4 text-sm">
-        Generating an illustrative image for: <strong>{scenarioTitle}</strong>
+        Generating a simulation for: <strong>{scenarioTitle}</strong>
       </p>
 
       <div className="bg-gray-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
@@ -78,25 +79,35 @@ export default function VideoSimulation({
           </div>
         )}
 
-        {status === "completed" && imageUrl && (
+        {status === "completed" && (videoUrl || imageUrl) && (
           <div className="w-full h-full bg-black flex items-center justify-center">
-            <img
-              src={imageUrl}
-              alt={`AI generated illustration for ${scenarioTitle}`}
-              className="w-full h-full object-cover"
-            />
+            {videoUrl ? (
+              <video
+                src={videoUrl}
+                controls
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt={`AI generated illustration for ${scenarioTitle}`}
+                  className="w-full h-full object-cover"
+                />
+              )
+            )}
           </div>
         )}
 
         {status === "failed" && (
           <div className="text-white text-center p-8">
             <div className="text-4xl mb-4">😢</div>
-            <p className="text-lg font-medium mb-2">Image generation failed</p>
+            <p className="text-lg font-medium mb-2">Generation failed</p>
             <p className="text-sm text-gray-400 mb-4">
               Please try again in a moment.
             </p>
             <button
-              onClick={generateImage}
+              onClick={generateVideoOrImage}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
             >
               Retry
@@ -108,8 +119,16 @@ export default function VideoSimulation({
       {status === "completed" && (
         <div className="mt-4 p-4 bg-blue-50 rounded-lg">
           <p className="text-sm text-gray-700">
-            <span className="font-medium">Note:</span> This is a still image
-            placeholder while Sora video generation is unavailable.
+            <span className="font-medium">Note:</span>{" "}
+            {videoUrl
+              ? "Using Together (Sora-2) video generation or canned video."
+              : "Using Together free image fallback (FLUX.1)."}
+            {source && (
+              <>
+                {" "}
+                <span className="text-gray-500">Source: {source}</span>
+              </>
+            )}
           </p>
         </div>
       )}

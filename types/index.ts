@@ -93,7 +93,9 @@ export interface AnalyzeResponse {
 }
 
 export interface VideoResponse {
-  videoId: string;
+  videoId?: string;
   status: VideoGenerationStatus;
   url?: string;
+  fallbackImage?: string;
+  source?: string;
 }
