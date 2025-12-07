@@ -22,8 +22,7 @@ export default function EmotionAnalysis({ analysis }: EmotionAnalysisProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 space-y-5">
-      {/* Title */}
+    <div className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6 space-y-4">
       <div className="flex items-center gap-3">
         <div className="bg-primary/20 p-2 rounded-xl">
           <ChartBarIcon className="w-6 h-6 text-primary" />
@@ -31,54 +30,14 @@ export default function EmotionAnalysis({ analysis }: EmotionAnalysisProps) {
         <h3 className="text-xl font-bold text-gray-800">{t("analysis.title")}</h3>
       </div>
 
-      {/* Emotion Tags */}
-      <div>
-        <p className="text-sm font-medium text-gray-600 mb-2">{t("analysis.emotions")}</p>
-        <div className="flex flex-wrap gap-2">
-          {analysis.emotions.map((emotion) => (
-            <span
-              key={emotion}
-              className={`px-3 py-1.5 rounded-full text-sm font-semibold ${emotionStyles[emotion]}`}
-            >
-              {t(`emotion.${emotion}`)}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Category */}
-      <div>
-        <p className="text-sm font-medium text-gray-600 mb-2">{t("analysis.category")}</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="px-4 py-1.5 bg-primary text-white rounded-full text-sm font-bold">
-            {t(`category.${analysis.category}`)}
-          </span>
-          {analysis.subcategory && (
-            <>
-              <span className="text-gray-400 text-xl">·</span>
-              <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
-                {analysis.subcategory}
-              </span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Confidence */}
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <p className="text-sm font-medium text-gray-600">{t("analysis.confidence")}</p>
-          <p className="text-sm font-bold text-primary">
-            {Math.round(analysis.confidence * 100)}%
-          </p>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div
-            className="bg-primary h-2.5 rounded-full transition-all duration-500"
-            style={{ width: `${analysis.confidence * 100}%` }}
-          ></div>
-        </div>
-      </div>
+      <p className="text-sm text-gray-700 leading-relaxed">
+        {t("analysis.emotions")}:{" "}
+        {analysis.emotions.map((emotion) => t(`emotion.${emotion}`)).join(", ")}
+      </p>
+      <p className="text-sm text-gray-700 leading-relaxed">
+        {t("analysis.category")}: {t(`category.${analysis.category}`)}
+        {analysis.subcategory ? ` · ${analysis.subcategory}` : ""}
+      </p>
     </div>
   );
 }

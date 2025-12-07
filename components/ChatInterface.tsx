@@ -112,6 +112,29 @@ export default function ChatInterface({
     }
   };
 
+  const suggestionChips = [
+    {
+      ko: "교수님이 '밥 먹었어?'라고 해서 약속인 줄 알았어요",
+      en: "Professor said 'Did you eat?' and I thought it was an invite",
+      msg: "교수님이 '밥 먹었어?'라고 해서 약속인 줄 알았어요",
+    },
+    {
+      ko: "회식에서 술 권유가 부담돼요",
+      en: "Drinking pressure at company dinners",
+      msg: "회식에서 술 권유가 부담돼요",
+    },
+    {
+      ko: "조별과제가 처음이라 걱정돼요",
+      en: "First group project makes me nervous",
+      msg: "조별과제가 처음이라 걱정돼요",
+    },
+    {
+      ko: "일상 대화가 어색해요",
+      en: "Small talk feels awkward",
+      msg: "일상 대화가 어색해요",
+    },
+  ];
+
   return (
     <div className="flex flex-col h-full bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden">
       {/* Header */}
@@ -129,8 +152,12 @@ export default function ChatInterface({
             className="px-3 py-1.5 bg-white/70 hover:bg-white text-xs font-semibold flex items-center gap-2 rounded-full shadow-sm transition-all border border-black/5"
           >
             {mode === "text"
-              ? `🗣 ${lang === "ko" ? "음성으로" : "To Voice"}`
-              : `💬 ${lang === "ko" ? "채팅으로" : "To Text"}`}
+              ? lang === "ko"
+                ? "🎙️ 음성으로"
+                : "🎙️ To voice"
+              : lang === "ko"
+              ? "⌨️ 텍스트로"
+              : "⌨️ To text"}
           </button>
         </div>
       </div>
@@ -141,19 +168,14 @@ export default function ChatInterface({
           <div className="text-center text-gray-500 my-8">
             <p className="font-semibold mb-4">
               {lang === "ko"
-                ? "어떤 상황에 대해 이야기하고 싶으신가요?"
+                ? "어떤 상황을 이야기해볼까요?"
                 : "What situation would you like to talk about?"}
             </p>
             <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
-              {[
-                { ko: "교수님 인사가 헷갈려요", en: "Confused by professor's greeting", msg: "교수님이 '밥 먹었어?'라고 하셨어요" },
-                { ko: "회식 문화가 어려워요", en: "Struggling with company dinners", msg: "회식 문화가 어려워요" },
-                { ko: "조별과제가 처음이에요", en: "New to group projects", msg: "조별과제 역할 분담이 처음이에요" },
-                { ko: "일상 대화가 헷갈려요", en: "Daily conversations are confusing", msg: "이웃이 어디 가냐고 물어봐서 놀랐어요" },
-              ].map((item) => (
+              {suggestionChips.map((item) => (
                 <button
                   key={item.ko}
-                  onClick={() => onSendMessage(lang === 'ko' ? item.msg : item.en)}
+                  onClick={() => onSendMessage(lang === "ko" ? item.msg : item.en)}
                   className="p-3 bg-white shadow-md rounded-full hover:bg-gray-50 hover:shadow-lg transition-all"
                 >
                   {lang === "ko" ? item.ko : item.en}
@@ -208,7 +230,7 @@ export default function ChatInterface({
         {ctaStage === "offer" && (
           <div className="bg-white/80 backdrop-blur border border-black/5 rounded-2xl px-4 py-3 shadow-sm max-w-sm">
             <p className="text-sm font-semibold text-gray-800 mb-2">
-              {lang === "ko" ? "다음 단계를 선택하세요" : "Choose the next step"}
+              {lang === "ko" ? "다음 단계를 골라보세요" : "Choose the next step"}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -218,7 +240,7 @@ export default function ChatInterface({
                 }}
                 className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform"
               >
-                {lang === "ko" ? "대화 분석" : "Analyze Conversation"}
+                {lang === "ko" ? "대화 분석" : "Analyze conversation"}
               </button>
               <button
                 onClick={() => {
@@ -227,7 +249,7 @@ export default function ChatInterface({
                 }}
                 className="px-4 py-1.5 rounded-full bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors border border-black/10"
               >
-                {lang === "ko" ? "채팅 계속" : "Continue Chat"}
+                {lang === "ko" ? "계속 대화" : "Continue chat"}
               </button>
             </div>
           </div>
@@ -236,7 +258,7 @@ export default function ChatInterface({
         {ctaStage === "post-analysis" && (
           <div className="bg-white/80 backdrop-blur border border-black/5 rounded-2xl px-4 py-3 shadow-sm max-w-sm">
             <p className="text-sm font-semibold text-gray-800 mb-2">
-              {lang === "ko" ? "어떤 시뮬레이션을 원하세요?" : "Which simulation would you like?"}
+              {lang === "ko" ? "어떤 시뮬레이션을 볼까요?" : "Which simulation would you like?"}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -247,7 +269,7 @@ export default function ChatInterface({
                 className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform disabled:opacity-60"
                 disabled={simulationLoading}
               >
-                {simulationLoading ? "생성 중..." : "현재 상황"}
+                {simulationLoading ? "생성 중..." : lang === "ko" ? "현재 상황" : "Current scenario"}
               </button>
               <button
                 onClick={() => {
@@ -256,7 +278,7 @@ export default function ChatInterface({
                 }}
                 className="px-4 py-1.5 rounded-full bg-white text-gray-700 text-sm font-medium hover:bg-gray-100 transition-colors border border-black/10"
               >
-                비슷한 상황
+                {lang === "ko" ? "비슷한 상황" : "Similar scenario"}
               </button>
             </div>
           </div>
@@ -270,7 +292,11 @@ export default function ChatInterface({
         {mode === "voice" ? (
           <div className="flex flex-col items-center justify-center h-24">
             <VoiceRecorder onTranscript={(text) => onSendMessage(text)} isLoading={isLoading || isPlayingAudio} />
-            {isPlayingAudio && <p className="text-primary text-xs mt-3 font-medium">{lang === "ko" ? "AI 답변 재생 중..." : "Playing AI response..."}</p>}
+            {isPlayingAudio && (
+              <p className="text-primary text-xs mt-3 font-medium">
+                {lang === "ko" ? "AI 응답을 재생 중..." : "Playing AI response..."}
+              </p>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex items-center gap-3">

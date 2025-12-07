@@ -1,16 +1,16 @@
 "use client";
 
-import { useLanguage, Language } from "@/context/LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function LanguageSelector() {
   const { lang, setLang } = useLanguage();
 
   return (
-    <div className="relative flex items-center p-1 bg-gray-200/70 rounded-full">
+    <div className="relative flex items-center p-1 bg-amber-100/80 border border-amber-200 rounded-full">
       <button
         onClick={() => setLang("ko")}
         className={`w-1/2 px-4 py-1.5 text-xs font-bold rounded-full transition-colors ${
-          lang === "ko" ? "text-gray-800" : "text-gray-500 hover:text-gray-700"
+          lang === "ko" ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
         }`}
         aria-label="Switch to Korean"
       >
@@ -19,7 +19,7 @@ export default function LanguageSelector() {
       <button
         onClick={() => setLang("en")}
         className={`w-1/2 px-4 py-1.5 text-xs font-bold rounded-full transition-colors ${
-          lang === "en" ? "text-gray-800" : "text-gray-500 hover:text-gray-700"
+          lang === "en" ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
         }`}
         aria-label="Switch to English"
       >
@@ -27,9 +27,12 @@ export default function LanguageSelector() {
       </button>
       <div
         className={`absolute top-1 left-1 w-1/2 h-[calc(100%-0.5rem)] bg-white rounded-full shadow-md transition-transform duration-300 ease-in-out ${
-          lang === 'en' ? 'transform translate-x-full' : ''
+          lang === "en" ? "translate-x-full" : ""
         }`}
-        style={{ transform: `translateX(${lang === 'en' ? 'calc(100% - 0.5rem)' : '0%'})` }}
+        style={{
+          transform:
+            lang === "en" ? "translateX(calc(100% - 0.5rem))" : "translateX(0%)",
+        }}
       />
     </div>
   );

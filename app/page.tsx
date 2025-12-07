@@ -5,7 +5,6 @@ import ChatInterface from "@/components/ChatInterface";
 import ModeSelector from "@/components/ModeSelector";
 import EmotionAnalysis from "@/components/EmotionAnalysis";
 import SolutionCard from "@/components/SolutionCard";
-import LearningOptions from "@/components/LearningOptions";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -38,7 +37,6 @@ export default function Home() {
   const [evaluationContext, setEvaluationContext] = useState("");
 
   const handleSendMessage = async (content: string) => {
-    // If waiting for evaluation response, evaluate instead of normal chat
     if (evaluationPending) {
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -64,7 +62,7 @@ export default function Home() {
         const feedbackMessage: ChatMessage = {
           id: (Date.now() + 2).toString(),
           role: "assistant",
-          content: `점수: ${data.score}/100\n피드백: ${data.feedback}\n더 나은 답변 예시: ${data.betterAnswer}`,
+          content: `점수: ${data.score}/100\n피드백: ${data.feedback}\n더 나은 답: ${data.betterAnswer}`,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, feedbackMessage]);
@@ -89,13 +87,12 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      // 1. 채팅 API 호출
       const chatResponse = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: content,
-          history: messages,
+          history: [...messages, userMessage],
           language: lang,
         }),
       });
@@ -119,14 +116,15 @@ export default function Home() {
         }
         return next;
       });
-
-      // 분석은 CTA 버튼을 통해 수동으로 진행
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "죄송합니다. 응답을 생성하는 중 오류가 발생했습니다.",
+        content:
+          lang === "ko"
+            ? "메시지를 보내는 중 오류가 발생했어요. 잠시 후 다시 시도해주세요."
+            : "Something went wrong while sending. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -157,12 +155,13 @@ export default function Home() {
       setRelatedScenarios(analyzeData.relatedScenarios || []);
       setShowAnalysis(true);
 
-      // 분석 완료 메시지
       const analysisCompleteMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "assistant",
         content:
-          "상황을 분석했어요! 아래에서 감정 분석 결과와 해결 방법을 확인해보세요.",
+          lang === "ko"
+            ? "대화 분석이 끝났어요. 오른쪽에서 감정 분석과 제안 카드를 확인해보세요."
+            : "Analysis is ready. Check the right panel for insights and guidance.",
         timestamp: new Date(),
       };
 
@@ -180,7 +179,7 @@ export default function Home() {
     setSolution(null);
     setRelatedScenarios([]);
     setShowAnalysis(false);
-    setMode(null); // 모드 선택 화면으로 돌아감
+    setMode(null);
     setAssistantTurns(0);
     setCtaStage("none");
     setSimulationResult(null);
@@ -220,24 +219,31 @@ export default function Home() {
 
       if (!res.ok) throw new Error("Simulation failed");
       const data = await res.json();
-      const isVideo = data.url && data.url.endsWith(".mp4");
+      const isVideo =
+        data.url && typeof data.url === "string"
+          ? data.url.toLowerCase().includes(".mp4")
+          : false;
       setSimulationResult({
         image: data.fallbackImage,
         url: data.url,
         source: data.source,
       });
-      // Push media as chat message
       const simMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "assistant",
-        content: "시뮬레이션 결과입니다. 이 상황에서 어떻게 대답할까요?",
+        content:
+          lang === "ko"
+            ? "시뮬레이션 결과예요. 영상이나 이미지를 확인해보세요."
+            : "Here’s the simulation—check the video or image below.",
         imageUrl: isVideo ? undefined : data.fallbackImage || data.url,
         videoUrl: isVideo ? data.url : undefined,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, simMessage]);
       setEvaluationPending(true);
-      setEvaluationContext("대화 기반 시뮬레이션 상황");
+      setEvaluationContext(
+        lang === "ko" ? "현재 상황 시뮬레이션" : "Current scenario simulation"
+      );
     } catch (error) {
       console.error("Simulation error:", error);
       setSimulationResult({
@@ -262,74 +268,56 @@ export default function Home() {
         .then(async (res) => {
           if (!res.ok) throw new Error("Similar simulation failed");
           const data = await res.json();
-          const isVideo = data.url && data.url.endsWith(".mp4");
+          const isVideo =
+            data.url && typeof data.url === "string"
+              ? data.url.toLowerCase().includes(".mp4")
+              : false;
           const simMsg: ChatMessage = {
             id: Date.now().toString(),
             role: "assistant",
-            content: `비슷한 상황 시뮬레이션입니다. 이럴 때 뭐라고 답할까요?`,
+            content:
+              lang === "ko"
+                ? "비슷한 상황 시뮬레이션입니다. 영상이나 이미지를 확인해보세요."
+                : "Here’s a similar scenario simulation—check the media below.",
             imageUrl: isVideo ? undefined : data.fallbackImage || data.url,
             videoUrl: isVideo ? data.url : undefined,
             timestamp: new Date(),
           };
           setMessages((prev) => [...prev, simMsg]);
           setEvaluationPending(true);
-          setEvaluationContext(`비슷한 상황: ${scenario.korean}`);
+          setEvaluationContext(
+            lang === "ko"
+              ? `비슷한 상황: ${scenario.korean}`
+              : `Similar scenario: ${scenario.korean}`
+          );
         })
         .catch((err) => console.error(err));
     }
   };
 
-  const handleSelectScenario = async (scenarioId: string) => {
-    const scenario = relatedScenarios.find((s) => s.id === scenarioId);
-    if (!scenario) return;
-    try {
-      const res = await fetch("/api/video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenarioId: scenario.id }),
-      });
-      if (!res.ok) throw new Error("Simulation failed");
-      const data = await res.json();
-      const isVideo = data.url && data.url.endsWith(".mp4");
-      const simMsg: ChatMessage = {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `${scenario.korean} 시뮬레이션입니다. 이럴 때 뭐라고 답할까요?`,
-        imageUrl: isVideo ? undefined : data.fallbackImage || data.url,
-        videoUrl: isVideo ? data.url : undefined,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, simMsg]);
-      setEvaluationPending(true);
-      setEvaluationContext(`추천 시나리오: ${scenario.korean}`);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   return (
-    <main className="min-h-screen bg-[var(--app-bg)]">
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-amber-50 via-white to-amber-100">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -left-10 w-80 h-80 bg-amber-100 rounded-full blur-3xl opacity-25 animate-pulse" />
+        <div className="absolute top-10 right-0 w-64 h-64 bg-amber-200 rounded-full blur-3xl opacity-20 animate-[pulse_6s_ease-in-out_infinite]" />
+        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-yellow-50 rounded-full blur-3xl opacity-25 animate-[pulse_7s_ease-in-out_infinite]" />
+      </div>
       {/* Header */}
-      <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-md">
+      <header className="relative z-10 w-full bg-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
-              <div className="text-4xl">🌉</div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-                  {t("app.title")}
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  {t("app.subtitle")}
-                </p>
-              </div>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg" />
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-700 bg-clip-text text-transparent">
+                CultureBridge
+              </h1>
             </div>
             <div className="flex items-center gap-3">
               <LanguageSelector />
               {mode !== null && (
                 <button
                   onClick={handleNewConversation}
-                  className="px-4 py-2 bg-primary text-white rounded-full hover:shadow-lg hover:scale-105 transition-all text-sm font-semibold"
+                  className="px-4 py-2 bg-gray-900 text-white rounded-full hover:shadow-lg hover:scale-105 transition-all text-sm font-semibold"
                 >
                   {t("chat.newChat")}
                 </button>
@@ -374,13 +362,13 @@ export default function Home() {
                   <div className="text-6xl mb-4 animate-bounce">💬</div>
                   <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     {lang === "ko"
-                      ? "어떤 대화가 고민인가요?"
+                      ? "요즘 어떤 대화가 마음에 걸리세요?"
                       : "What conversation is on your mind?"}
                   </h2>
                   <p className="text-gray-600 max-w-md mx-auto">
                     {lang === "ko"
-                      ? "한국에서 겪은 어려운 대화나 상황을 이야기해주세요. AI가 분석하고 더 나은 소통 방법을 제안해 드립니다."
-                      : "Tell us about a difficult conversation or situation you've faced in Korea. Our AI will analyze it and suggest better ways to communicate."}
+                      ? "한국에서 겪은 어려운 대화나 상황을 편하게 들려주세요. 감정과 맥락을 분석해서 더 나은 표현을 함께 찾아드릴게요."
+                      : "Tell us about a difficult conversation or situation you've faced in Korea. We'll analyze the context and suggest better ways to communicate."}
                   </p>
                 </div>
               )}
@@ -389,30 +377,12 @@ export default function Home() {
                 <>
                   <EmotionAnalysis analysis={analysis} />
                   {solution && <SolutionCard solution={solution} />}
-                  {relatedScenarios.length > 0 && (
-                    <LearningOptions
-                      scenarios={relatedScenarios}
-                      onSelectScenario={handleSelectScenario}
-                    />
-                  )}
                 </>
               )}
             </div>
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      <footer className="w-full bg-white/50 backdrop-blur-md mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="text-center text-sm text-gray-500">
-            <p>© 2024 CultureBridge. Helping you connect with Korean culture.</p>
-            <p className="mt-1 text-xs text-gray-400">
-              Powered by Google Gemini &amp; Claude
-            </p>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }

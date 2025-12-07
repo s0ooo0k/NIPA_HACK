@@ -12,7 +12,7 @@ interface LearningOptionsProps {
 export default function LearningOptions({ scenarios, onSelectScenario }: LearningOptionsProps) {
   const { t, lang } = useLanguage();
 
-  if (scenarios.length === 0) return null;
+  if (true || scenarios.length === 0) return null;
 
   return (
     <div className="bg-white/70 backdrop-blur-lg rounded-3xl shadow-xl p-6">
