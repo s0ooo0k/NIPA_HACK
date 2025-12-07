@@ -7,15 +7,19 @@ type CannedVideo = {
 export const cannedVideos: CannedVideo[] = [
   {
     scenarioId: "bap-meogeosseo",
-    url: "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4",
+    url: "https://nipa-s3-hack.s3.us-east-1.amazonaws.com/babmeugeu.mp4",
   },
   {
     scenarioId: "daeume-boja",
-    url: "https://sample-videos.com/video321/mp4/720/sample-5s.mp4",
+    url: "https://nipa-s3-hack.s3.us-east-1.amazonaws.com/daeum.mp4",
   },
   {
-    scenarioId: "eodi-ga",
-    url: "https://sample-videos.com/video321/mp4/720/sample-10s.mp4",
+    scenarioId: "mani-deuseyo",
+    url: "https://nipa-s3-hack.s3.us-east-1.amazonaws.com/manimugu.mp4",
+  },
+  {
+    scenarioId: "oneul-jom-bappeune",
+    url: "https://nipa-s3-hack.s3.us-east-1.amazonaws.com/yageun.mp4",
   },
 ];
 

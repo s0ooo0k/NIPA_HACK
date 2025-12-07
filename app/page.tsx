@@ -28,6 +28,16 @@ export default function Home() {
     null
   );
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [assistantTurns, setAssistantTurns] = useState(0);
+  const [ctaStage, setCtaStage] = useState<"none" | "offer" | "post-analysis">(
+    "none"
+  );
+  const [simulationResult, setSimulationResult] = useState<{
+    url?: string;
+    image?: string;
+    source?: string;
+  } | null>(null);
+  const [isSimLoading, setIsSimLoading] = useState(false);
 
   const handleSendMessage = async (content: string) => {
     const userMessage: ChatMessage = {
@@ -64,11 +74,15 @@ export default function Home() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setAssistantTurns((prev) => {
+        const next = prev + 1;
+        if (next >= 3 && ctaStage === "none") {
+          setCtaStage("offer");
+        }
+        return next;
+      });
 
-      // 2. 충분한 대화가 모였다면 분석 시작
-      if (!chatData.needsMoreInfo && messages.length >= 2) {
-        await analyzeConversation([...messages, userMessage, assistantMessage]);
-      }
+      // 분석은 CTA 버튼을 통해 수동으로 진행
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: ChatMessage = {
@@ -137,6 +151,9 @@ export default function Home() {
     setSelectedScenario(null);
     setShowAnalysis(false);
     setMode(null); // 모드 선택 화면으로 돌아감
+    setAssistantTurns(0);
+    setCtaStage("none");
+    setSimulationResult(null);
   };
 
   const handleSelectMode = (selectedMode: "text" | "voice") => {
@@ -147,16 +164,64 @@ export default function Home() {
     setMode(mode === "text" ? "voice" : "text");
   };
 
+  const handleContinueCTA = () => {
+    setCtaStage("none");
+    setAssistantTurns(0);
+  };
+
+  const handleAnalyzeCTA = async () => {
+    await analyzeConversation(messages);
+    setCtaStage("post-analysis");
+    setAssistantTurns(0);
+  };
+
+  const handleSimulateCurrent = async () => {
+    try {
+      setIsSimLoading(true);
+      setSimulationResult(null);
+
+      const res = await fetch("/api/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!res.ok) throw new Error("Simulation failed");
+      const data = await res.json();
+      setSimulationResult({
+        image: data.fallbackImage,
+        url: data.url,
+        source: data.source,
+      });
+    } catch (error) {
+      console.error("Simulation error:", error);
+      setSimulationResult({
+        image: undefined,
+        url: undefined,
+        source: "error",
+      });
+    } finally {
+      setIsSimLoading(false);
+    }
+  };
+
+  const handleSimulateSimilar = () => {
+    if (relatedScenarios.length > 0) {
+      setSelectedScenario(relatedScenarios[0]);
+      setShowAnalysis(true);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-100">
       {/* 헤더 */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white/80 backdrop-blur border-b border-amber-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-3xl">🌉</div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-700 bg-clip-text text-transparent">
                   {t("app.title")}
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-600">
@@ -169,7 +234,7 @@ export default function Home() {
               {showAnalysis && (
                 <button
                   onClick={handleNewConversation}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-all text-sm font-medium"
+                  className="px-4 py-2 bg-gradient-to-r from-gray-900 to-gray-700 text-white rounded-full hover:shadow-lg transition-all text-sm font-medium"
                 >
                   {t("chat.newChat")}
                 </button>
@@ -196,13 +261,20 @@ export default function Home() {
                 isLoading={isLoading}
                 mode={mode}
                 onChangeMode={handleChangeMode}
+                ctaStage={ctaStage}
+                onContinueCTA={handleContinueCTA}
+                onAnalyzeCTA={handleAnalyzeCTA}
+                onSimulateCurrent={handleSimulateCurrent}
+                onSimulateSimilar={handleSimulateSimilar}
+                simulationResult={simulationResult}
+                simulationLoading={isSimLoading}
               />
             </div>
 
             {/* 오른쪽: 분석 결과 및 솔루션 */}
             <div className="space-y-6">
               {!showAnalysis && (
-                <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+                <div className="bg-white/85 backdrop-blur rounded-2xl shadow-xl p-8 text-center border border-amber-100">
                   <div className="text-6xl mb-4">💬</div>
                   <h2 className="text-2xl font-bold text-gray-800 mb-3">
                     {lang === "ko"
@@ -244,7 +316,7 @@ export default function Home() {
       </div>
 
       {/* 푸터 */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
+      <footer className="bg-white/80 backdrop-blur border-t border-amber-100 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center text-sm text-gray-600">
             <p>© 2024 CultureBridge. 이주민의 한국 문화 적응을 돕습니다.</p>

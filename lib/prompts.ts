@@ -232,6 +232,19 @@ export function formatConversationHistory(messages: ChatMessage[]): string {
     .join("\n");
 }
 
+// Build a visual simulation prompt from a free-form conversation
+export function buildSimulationPromptFromConversation(
+  messages: ChatMessage[]
+): string {
+  const history = formatConversationHistory(messages);
+  return [
+    "Create one illustrative scene (image only, no text on the image) that captures the Korean cultural misunderstanding in this conversation.",
+    "Realistic, warm, modern (Apple/Toss-like aesthetic), soft lighting, subtle gradients. Show a gentle resolution cue.",
+    "Conversation transcript:",
+    history,
+  ].join("\n");
+}
+
 // 비디오 프롬프트 생성
 export function generateVideoPrompt(
   scenario: {
