@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findScenarioById } from "@/data/scenarios";
 import { generateVideoPrompt } from "@/lib/prompts";
-import { generateTogetherImage } from "@/lib/together";
+import { generateVideoWithFallback } from "@/lib/together";
+import { findCannedVideo } from "@/data/cannedVideos";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,20 +27,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use canned/pre-generated video if available
+    const cannedUrl = findCannedVideo(scenarioId);
+    if (cannedUrl) {
+      return NextResponse.json({
+        scenarioId,
+        status: "completed",
+        url: cannedUrl,
+        source: "canned",
+      });
+    }
+
     // Build prompt
     let videoPrompt = scenario.videoPrompt;
     if (sceneType !== "correct") {
       videoPrompt = generateVideoPrompt(scenario, sceneType);
     }
 
-    // Image-only test: generate a still image via Together and return as fallbackImage
-    const image = await generateTogetherImage(videoPrompt);
+    const result = await generateVideoWithFallback(videoPrompt);
 
     return NextResponse.json({
       scenarioId,
-      status: "completed",
-      fallbackImage: image,
-      source: "together-image-only",
+      status: result.status,
+      url: result.url,
+      videoId: result.videoId,
+      fallbackImage: result.fallbackImage,
+      error: result.error,
+      source: result.url
+        ? "together-video"
+        : result.fallbackImage
+        ? "together-image"
+        : "unknown",
     });
   } catch (error) {
     console.error("Video generation API error:", error);

@@ -18,6 +18,7 @@ interface ChatInterfaceProps {
   onSimulateSimilar: () => void;
   simulationResult?: { url?: string; image?: string; source?: string } | null;
   simulationLoading?: boolean;
+  evaluationPending?: boolean;
 }
 
 export default function ChatInterface({
@@ -33,6 +34,7 @@ export default function ChatInterface({
   onSimulateSimilar,
   simulationResult,
   simulationLoading,
+  evaluationPending,
 }: ChatInterfaceProps) {
   const { t, lang } = useLanguage();
   const [input, setInput] = useState("");
@@ -202,6 +204,15 @@ export default function ChatInterface({
               <p className="text-sm sm:text-base whitespace-pre-wrap">
                 {msg.content}
               </p>
+              {msg.imageUrl && (
+                <div className="mt-3 overflow-hidden rounded-xl border border-amber-100">
+                  <img
+                    src={msg.imageUrl}
+                    alt="Simulation"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               <p
                 className={`text-xs mt-1 ${msg.role === "user" ? "text-amber-100" : "text-gray-500"}`}
               >
@@ -272,39 +283,10 @@ export default function ChatInterface({
                 >
                   비슷한 상황 시뮬레이션
                 </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {simulationResult && (simulationResult.image || simulationResult.url) && (
-          <div className="flex justify-start">
-            <div className="w-full bg-white/90 backdrop-blur border border-amber-100 rounded-2xl shadow overflow-hidden">
-              <div className="p-3 flex items-center justify-between bg-gradient-to-r from-amber-100 to-amber-200">
-                <p className="text-sm font-semibold text-gray-800">
-                  {simulationResult.source === "together-image-conversation"
-                    ? "현재 대화 기반 이미지"
-                    : "시뮬레이션 결과"}
-                </p>
-                {simulationResult.source && (
-                  <span className="text-xs text-gray-600">{simulationResult.source}</span>
-                )}
-              </div>
-              <div className="bg-black flex items-center justify-center">
-                {simulationResult.url ? (
-                  <video
-                    src={simulationResult.url}
-                    controls
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  simulationResult.image && (
-                    <img
-                      src={simulationResult.image}
-                      alt="Simulation"
-                      className="w-full h-full object-cover"
-                    />
-                  )
+                {evaluationPending && (
+                  <span className="text-xs text-amber-700">
+                    답변을 입력하면 점수와 피드백을 드릴게요.
+                  </span>
                 )}
               </div>
             </div>

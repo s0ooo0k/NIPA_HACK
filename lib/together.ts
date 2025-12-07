@@ -80,17 +80,36 @@ function pickImageUrl(data: any): string | undefined {
 }
 
 export async function createTogetherVideo(prompt: string) {
-  return togetherRequest<any>("/videos", {
-    method: "POST",
-    body: JSON.stringify({
-      model: TOGETHER_VIDEO_MODEL,
-      prompt,
-    }),
-  });
+  // Some Together deployments expect /videos/generations instead of /videos
+  try {
+    return await togetherRequest<any>("/videos", {
+      method: "POST",
+      body: JSON.stringify({
+        model: TOGETHER_VIDEO_MODEL,
+        prompt,
+      }),
+    });
+  } catch (err) {
+    // Retry with /videos/generations if /videos is not found
+    return togetherRequest<any>("/videos/generations", {
+      method: "POST",
+      body: JSON.stringify({
+        model: TOGETHER_VIDEO_MODEL,
+        prompt,
+      }),
+    });
+  }
 }
 
 export async function getTogetherVideo(taskId: string) {
-  return togetherRequest<any>(`/videos/${taskId}`, { method: "GET" });
+  // Try /videos/:id first, then /videos/generations/:id
+  try {
+    return await togetherRequest<any>(`/videos/${taskId}`, { method: "GET" });
+  } catch (err) {
+    return togetherRequest<any>(`/videos/generations/${taskId}`, {
+      method: "GET",
+    });
+  }
 }
 
 export async function generateTogetherImage(prompt: string): Promise<string> {

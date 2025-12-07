@@ -36,6 +36,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  imageUrl?: string;
 }
 
 // 감정 분석 결과

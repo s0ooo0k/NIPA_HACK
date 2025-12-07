@@ -38,8 +38,50 @@ export default function Home() {
     source?: string;
   } | null>(null);
   const [isSimLoading, setIsSimLoading] = useState(false);
+  const [evaluationPending, setEvaluationPending] = useState(false);
+  const [evaluationContext, setEvaluationContext] = useState("");
 
   const handleSendMessage = async (content: string) => {
+    // If waiting for evaluation response, evaluate instead of normal chat
+    if (evaluationPending) {
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "user",
+        content,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+
+      try {
+        setIsLoading(true);
+        const res = await fetch("/api/evaluate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userAnswer: content,
+            context: evaluationContext,
+            language: lang,
+          }),
+        });
+        if (!res.ok) throw new Error("Evaluation failed");
+        const data = await res.json();
+        const feedbackMessage: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          role: "assistant",
+          content: `점수: ${data.score}/100\n피드백: ${data.feedback}\n더 나은 답변 예시: ${data.betterAnswer}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, feedbackMessage]);
+      } catch (error) {
+        console.error("Error evaluating answer:", error);
+      } finally {
+        setIsLoading(false);
+        setEvaluationPending(false);
+        setEvaluationContext("");
+      }
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -154,6 +196,8 @@ export default function Home() {
     setAssistantTurns(0);
     setCtaStage("none");
     setSimulationResult(null);
+    setEvaluationPending(false);
+    setEvaluationContext("");
   };
 
   const handleSelectMode = (selectedMode: "text" | "voice") => {
@@ -193,6 +237,17 @@ export default function Home() {
         url: data.url,
         source: data.source,
       });
+      // Push image as chat message
+      const simMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "시뮬레이션 결과입니다. 이 상황에서 어떻게 대답할까요?",
+        imageUrl: data.fallbackImage || data.url,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, simMessage]);
+      setEvaluationPending(true);
+      setEvaluationContext("대화 기반 시뮬레이션 상황");
     } catch (error) {
       console.error("Simulation error:", error);
       setSimulationResult({
@@ -207,8 +262,30 @@ export default function Home() {
 
   const handleSimulateSimilar = () => {
     if (relatedScenarios.length > 0) {
-      setSelectedScenario(relatedScenarios[0]);
+      const scenario = relatedScenarios[0];
+      setSelectedScenario(scenario);
       setShowAnalysis(true);
+      // Fire video/image generation for similar scenario
+      fetch("/api/video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenarioId: scenario.id }),
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error("Similar simulation failed");
+          const data = await res.json();
+          const simMsg: ChatMessage = {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: `비슷한 상황 시뮬레이션입니다. 이럴 때 뭐라고 답할까요?`,
+            imageUrl: data.fallbackImage || data.url,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, simMsg]);
+          setEvaluationPending(true);
+          setEvaluationContext(`비슷한 상황: ${scenario.korean}`);
+        })
+        .catch((err) => console.error(err));
     }
   };
 
@@ -268,6 +345,7 @@ export default function Home() {
                 onSimulateSimilar={handleSimulateSimilar}
                 simulationResult={simulationResult}
                 simulationLoading={isSimLoading}
+                evaluationPending={evaluationPending}
               />
             </div>
 
