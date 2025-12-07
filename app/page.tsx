@@ -7,6 +7,8 @@ import EmotionAnalysis from "@/components/EmotionAnalysis";
 import SolutionCard from "@/components/SolutionCard";
 import LearningOptions from "@/components/LearningOptions";
 import VideoSimulation from "@/components/VideoSimulation";
+import LanguageSelector from "@/components/LanguageSelector";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   ChatMessage,
   EmotionAnalysis as EmotionAnalysisType,
@@ -15,6 +17,7 @@ import {
 } from "@/types";
 
 export default function Home() {
+  const { lang, t } = useLanguage();
   const [mode, setMode] = useState<"text" | "voice" | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +48,7 @@ export default function Home() {
         body: JSON.stringify({
           message: content,
           history: messages,
+          language: lang,
         }),
       });
 
@@ -88,6 +92,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: conversationMessages,
+          language: lang,
         }),
       });
 
@@ -152,21 +157,24 @@ export default function Home() {
               <div className="text-3xl">🌉</div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  CultureBridge
+                  {t("app.title")}
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-600">
-                  한국 문화 적응 도우미
+                  {t("app.subtitle")}
                 </p>
               </div>
             </div>
-            {showAnalysis && (
-              <button
-                onClick={handleNewConversation}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-all text-sm font-medium"
-              >
-                새 상담 시작
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              <LanguageSelector />
+              {showAnalysis && (
+                <button
+                  onClick={handleNewConversation}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-all text-sm font-medium"
+                >
+                  {t("chat.newChat")}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -197,11 +205,14 @@ export default function Home() {
                 <div className="bg-white rounded-xl shadow-lg p-8 text-center">
                   <div className="text-6xl mb-4">💬</div>
                   <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                    어떤 이야기를 나눠볼까요?
+                    {lang === "ko"
+                      ? "어떤 이야기를 나눠볼까요?"
+                      : "What would you like to talk about?"}
                   </h2>
                   <p className="text-gray-600 max-w-md mx-auto">
-                    한국에서 겪은 문화적 갈등이나 이해하기 어려웠던 상황을 편하게
-                    이야기해주세요. AI가 함께 이해하고 해결 방법을 찾아드립니다.
+                    {lang === "ko"
+                      ? "한국에서 겪은 문화적 갈등이나 이해하기 어려웠던 상황을 편하게 이야기해주세요. AI가 함께 이해하고 해결 방법을 찾아드립니다."
+                      : "Share your cultural conflicts or confusing situations you've experienced in Korea. Our AI will help you understand and find solutions together."}
                   </p>
                 </div>
               )}

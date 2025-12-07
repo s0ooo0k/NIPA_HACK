@@ -1,19 +1,23 @@
 "use client";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 interface ModeSelectorProps {
   onSelectMode: (mode: "text" | "voice") => void;
 }
 
 export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="flex flex-col items-center justify-center h-full bg-white rounded-lg shadow-lg p-8">
       <div className="text-center mb-8">
         <div className="text-6xl mb-4">🌉</div>
         <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
-          CultureBridge
+          {t("app.title")}
         </h2>
         <p className="text-gray-600 text-lg">
-          어떤 방식으로 대화하시겠어요?
+          {t("mode.question")}
         </p>
       </div>
 
@@ -28,10 +32,10 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
               💬
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              채팅으로 대화
+              {t("mode.text")}
             </h3>
             <p className="text-gray-600 text-sm">
-              텍스트로 편하게 이야기해요
+              {t("mode.text.desc")}
             </p>
           </div>
           <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-blue-600"></div>
@@ -47,10 +51,10 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
               🎤
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              음성으로 대화
+              {t("mode.voice")}
             </h3>
             <p className="text-gray-600 text-sm">
-              목소리로 자연스럽게 이야기해요
+              {t("mode.voice.desc")}
             </p>
           </div>
           <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 to-purple-600"></div>
@@ -58,7 +62,7 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
       </div>
 
       <p className="text-gray-500 text-sm mt-8 text-center max-w-md">
-        언제든지 모드를 변경할 수 있어요
+        {t("mode.footer")}
       </p>
     </div>
   );
