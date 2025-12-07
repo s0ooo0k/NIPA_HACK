@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "@/types";
 import VoiceRecorder from "./VoiceRecorder";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -19,6 +20,7 @@ export default function ChatInterface({
   mode,
   onChangeMode,
 }: ChatInterfaceProps) {
+  const { t, lang } = useLanguage();
   const [input, setInput] = useState("");
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -92,16 +94,16 @@ export default function ChatInterface({
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold">CultureBridge AI</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">{t("app.title")} AI</h2>
             <p className="text-sm sm:text-base opacity-90 mt-1">
-              한국 문화 적응을 도와드립니다
+              {t("app.subtitle")}
             </p>
           </div>
           <button
             onClick={onChangeMode}
             className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors text-sm font-medium flex items-center gap-2"
           >
-            {mode === "text" ? "🎤 음성으로 전환" : "💬 채팅으로 전환"}
+            {mode === "text" ? `🎤 ${lang === "ko" ? "음성으로 전환" : "Switch to Voice"}` : `💬 ${lang === "ko" ? "채팅으로 전환" : "Switch to Text"}`}
           </button>
         </div>
       </div>
@@ -110,39 +112,70 @@ export default function ChatInterface({
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
         {messages.length === 0 && (
           <div className="text-center text-gray-500 mt-8">
-            <p className="text-lg mb-4">안녕하세요!</p>
+            <p className="text-lg mb-4">
+              {lang === "ko" ? "안녕하세요!" : "Hello!"}
+            </p>
             <p className="text-sm sm:text-base">
-              한국에서 겪은 문화적 갈등이나 어려운 상황을 편하게
-              이야기해주세요.
+              {lang === "ko"
+                ? "한국에서 겪은 문화적 갈등이나 어려운 상황을 편하게 이야기해주세요."
+                : "Share your cultural conflicts or confusing situations you've experienced in Korea."}
             </p>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
               <button
                 onClick={() =>
-                  onSendMessage("교수님이 밥 먹었냐고 물어보셨어요")
+                  onSendMessage(
+                    lang === "ko"
+                      ? "교수님이 밥 먹었냐고 물어보셨어요"
+                      : "My professor asked me if I ate"
+                  )
                 }
                 className="p-3 bg-blue-50 rounded-lg text-sm text-left hover:bg-blue-100 transition-colors"
               >
-                교수님과의 대화가 헷갈려요
-              </button>
-              <button
-                onClick={() => onSendMessage("회식 문화가 어려워요")}
-                className="p-3 bg-purple-50 rounded-lg text-sm text-left hover:bg-purple-100 transition-colors"
-              >
-                회식 문화가 어려워요
-              </button>
-              <button
-                onClick={() => onSendMessage("조별과제가 처음이에요")}
-                className="p-3 bg-green-50 rounded-lg text-sm text-left hover:bg-green-100 transition-colors"
-              >
-                조별과제가 처음이에요
+                {lang === "ko"
+                  ? "교수님과의 대화가 헷갈려요"
+                  : "Confused by professor's greeting"}
               </button>
               <button
                 onClick={() =>
-                  onSendMessage("이웃이 어디 가냐고 물어봐서 당황했어요")
+                  onSendMessage(
+                    lang === "ko"
+                      ? "회식 문화가 어려워요"
+                      : "Company dinner culture is difficult"
+                  )
+                }
+                className="p-3 bg-purple-50 rounded-lg text-sm text-left hover:bg-purple-100 transition-colors"
+              >
+                {lang === "ko"
+                  ? "회식 문화가 어려워요"
+                  : "Struggling with company dinners"}
+              </button>
+              <button
+                onClick={() =>
+                  onSendMessage(
+                    lang === "ko"
+                      ? "조별과제가 처음이에요"
+                      : "First time doing group projects"
+                  )
+                }
+                className="p-3 bg-green-50 rounded-lg text-sm text-left hover:bg-green-100 transition-colors"
+              >
+                {lang === "ko"
+                  ? "조별과제가 처음이에요"
+                  : "New to group projects"}
+              </button>
+              <button
+                onClick={() =>
+                  onSendMessage(
+                    lang === "ko"
+                      ? "이웃이 어디 가냐고 물어봐서 당황했어요"
+                      : "Neighbor asked where I'm going"
+                  )
                 }
                 className="p-3 bg-yellow-50 rounded-lg text-sm text-left hover:bg-yellow-100 transition-colors"
               >
-                일상 대화가 헷갈려요
+                {lang === "ko"
+                  ? "일상 대화가 헷갈려요"
+                  : "Daily conversations are confusing"}
               </button>
             </div>
           </div>
@@ -202,7 +235,7 @@ export default function ChatInterface({
             />
             {isPlayingAudio && (
               <p className="text-purple-600 text-sm mt-4 font-medium">
-                🔊 AI 응답 재생 중...
+                {lang === "ko" ? "🔊 AI 응답 재생 중..." : "🔊 Playing AI response..."}
               </p>
             )}
           </div>
@@ -213,7 +246,7 @@ export default function ChatInterface({
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="메시지를 입력하세요..."
+                placeholder={t("chat.placeholder")}
                 disabled={isLoading}
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 text-sm sm:text-base"
               />
@@ -222,7 +255,7 @@ export default function ChatInterface({
                 disabled={isLoading || !input.trim()}
                 className="px-6 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm sm:text-base"
               >
-                전송
+                {t("chat.send")}
               </button>
             </div>
           </form>

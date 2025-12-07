@@ -1,6 +1,7 @@
 "use client";
 
 import { Scenario } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface LearningOptionsProps {
   scenarios: Scenario[];
@@ -11,6 +12,8 @@ export default function LearningOptions({
   scenarios,
   onSelectScenario,
 }: LearningOptionsProps) {
+  const { t, lang } = useLanguage();
+
   if (scenarios.length === 0) {
     return null;
   }
@@ -20,12 +23,14 @@ export default function LearningOptions({
       <div className="flex items-center gap-2 mb-4">
         <span className="text-2xl">🎓</span>
         <h3 className="text-xl font-bold text-gray-800">
-          비슷한 상황 더 알아보기
+          {t("learning.title")}
         </h3>
       </div>
 
       <p className="text-gray-600 mb-6 text-sm sm:text-base">
-        비슷하게 헷갈릴 수 있는 표현들도 영상으로 볼까요?
+        {lang === "ko"
+          ? "비슷하게 헷갈릴 수 있는 표현들도 영상으로 볼까요?"
+          : "Want to learn more similar expressions with videos?"}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -48,7 +53,7 @@ export default function LearningOptions({
                 </p>
                 {scenario.actual && (
                   <p className="text-xs text-purple-600 font-medium">
-                    실제 의미: {scenario.actual}
+                    {lang === "ko" ? "실제 의미: " : "Actual meaning: "}{scenario.actual}
                   </p>
                 )}
               </div>

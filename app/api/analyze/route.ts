@@ -11,7 +11,10 @@ import { allScenarios, getScenariosByKeywords } from "@/data/scenarios";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { messages } = body as { messages: ChatMessage[] };
+    const { messages, language = "ko" } = body as {
+      messages: ChatMessage[];
+      language?: "ko" | "en";
+    };
 
     if (!messages || messages.length === 0) {
       return NextResponse.json(
@@ -24,7 +27,7 @@ export async function POST(request: NextRequest) {
     const conversation = formatConversationHistory(messages);
 
     // 2. 감정 분석
-    const analysisPrompt = getEmotionAnalysisPrompt(conversation);
+    const analysisPrompt = getEmotionAnalysisPrompt(conversation, language);
     const analysisResult = await analyzeWithJSON<
       EmotionAnalysis & {
         situation_summary: string;
@@ -44,7 +47,8 @@ export async function POST(request: NextRequest) {
     const solutionPrompt = getSolutionPrompt(
       analysisResult.situation_summary,
       analysisResult.emotions,
-      analysisResult.category
+      analysisResult.category,
+      language
     );
 
     const solution = await analyzeWithJSON<Solution>(solutionPrompt);

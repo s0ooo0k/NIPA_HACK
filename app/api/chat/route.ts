@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendChatMessage } from "@/lib/openai";
-import { CHAT_SYSTEM_PROMPT } from "@/lib/prompts";
+import { getChatSystemPrompt } from "@/lib/prompts";
 import { ChatMessage } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, history = [] } = body as {
+    const { message, history = [], language = "ko" } = body as {
       message: string;
       history: ChatMessage[];
+      language?: "ko" | "en";
     };
 
     if (!message) {
@@ -24,11 +25,14 @@ export async function POST(request: NextRequest) {
       content: msg.content,
     }));
 
+    // 언어에 맞는 시스템 프롬프트 생성
+    const systemPrompt = getChatSystemPrompt(language);
+
     // AI 응답 생성
     const response = await sendChatMessage(
       message,
       openaiHistory,
-      CHAT_SYSTEM_PROMPT
+      systemPrompt
     );
 
     // 대화가 충분한지 판단 (간단한 휴리스틱)
