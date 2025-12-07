@@ -1,16 +1,14 @@
 import OpenAI from "openai";
 
-// OpenAI 클라이언트 초기화
 const apiKey = process.env.OPENAI_API_KEY || "";
-const openai = new OpenAI({
-  apiKey,
-});
+const openai = new OpenAI({ apiKey });
 
-// 채팅 모델
-const CHAT_MODEL = "gpt-4o-mini"; // 빠르고 저렴한 모델
-const ANALYSIS_MODEL = "gpt-4o"; // 분석용 고성능 모델
+const CHAT_MODEL = "gpt-4o-mini"; // Faster, cheaper chat
+const ANALYSIS_MODEL = "gpt-4o"; // Higher quality for analysis
+const IMAGE_MODEL = "gpt-image-1";
+const IMAGE_FALLBACK_MODEL = "dall-e-3";
 
-// 채팅 메시지 전송
+// Chat completion helper
 export async function sendChatMessage(
   message: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
@@ -36,11 +34,11 @@ export async function sendChatMessage(
     return completion.choices[0].message.content || "";
   } catch (error) {
     console.error("OpenAI chat error:", error);
-    throw new Error("AI 응답 생성에 실패했습니다.");
+    throw new Error("AI response failed.");
   }
 }
 
-// JSON 형식으로 분석 결과 받기
+// Structured JSON analysis helper
 export async function analyzeWithJSON<T>(prompt: string): Promise<T> {
   try {
     const completion = await openai.chat.completions.create({
@@ -62,7 +60,52 @@ export async function analyzeWithJSON<T>(prompt: string): Promise<T> {
     return JSON.parse(text) as T;
   } catch (error) {
     console.error("OpenAI analysis error:", error);
-    throw new Error("분석에 실패했습니다.");
+    throw new Error("Analysis failed.");
+  }
+}
+
+export async function generateImage(prompt: string): Promise<{
+  dataUrl: string;
+  revisedPrompt?: string | null;
+}> {
+  const createWithModel = async (model: string) => {
+    return openai.images.generate({
+      model,
+      prompt,
+      size: "1024x1024",
+    });
+  };
+
+  try {
+    let response = await createWithModel(IMAGE_MODEL);
+    // Fallback to DALL·E 3 if the primary model is unavailable/unauthorized
+    if (!response.data?.[0] && IMAGE_FALLBACK_MODEL) {
+      response = await createWithModel(IMAGE_FALLBACK_MODEL);
+    }
+
+    const result = response.data?.[0];
+    const b64 = result?.b64_json;
+    const url = result?.url;
+    const dataUrl = b64 ? `data:image/png;base64,${b64}` : url;
+
+    if (!dataUrl) {
+      throw new Error("No image returned from OpenAI.");
+    }
+
+    return {
+      dataUrl,
+      revisedPrompt: result?.revised_prompt ?? null,
+    };
+  } catch (error) {
+    const err = error as any;
+    console.error("OpenAI image error:", {
+      status: err?.status,
+      code: err?.code,
+      param: err?.param,
+      message: err?.message,
+      response: err?.response?.data,
+    });
+    throw new Error("Image generation failed.");
   }
 }
 
@@ -72,14 +115,14 @@ export async function generateVideo(prompt: string): Promise<{
 }> {
   console.log("Sora video generation prompt:", prompt);
 
-  // TODO: 영상 적용
+  // TODO: Wire actual video generation when available
   return {
     videoId: `sora_video_${Date.now()}`,
     status: "pending",
   };
 }
 
-// 비디오 생성 상태 확인
+// Placeholder for polling video status
 export async function checkVideoStatus(videoId: string): Promise<{
   status: string;
   url?: string;
@@ -87,10 +130,9 @@ export async function checkVideoStatus(videoId: string): Promise<{
   return {
     status: "generating",
   };
-  /* 영상 미적용*/
 }
 
-// 스트리밍 채팅
+// Streaming chat helper
 export async function* streamChatMessage(
   message: string,
   history: { role: "user" | "assistant"; content: string }[] = [],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { VideoGenerationStatus } from "@/types";
 
 interface VideoSimulationProps {
@@ -13,37 +13,36 @@ export default function VideoSimulation({
   scenarioTitle,
 }: VideoSimulationProps) {
   const [status, setStatus] = useState<VideoGenerationStatus>("pending");
-  const [videoId, setVideoId] = useState<string | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  const prompt = useMemo(() => {
+    const title = scenarioTitle || "cultural scenario";
+    return `Create a single illustrative image (no text on the image) that represents this scenario: "${title}". Use a friendly, realistic style.`;
+  }, [scenarioTitle]);
 
   useEffect(() => {
-    generateVideo();
-  }, [scenarioId]);
+    generateImage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenarioId, prompt]);
 
-  const generateVideo = async () => {
+  const generateImage = async () => {
     try {
       setStatus("generating");
+      setImageUrl(null);
 
-      const response = await fetch("/api/video", {
+      const response = await fetch("/api/image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenarioId }),
+        body: JSON.stringify({ prompt }),
       });
 
-      if (!response.ok) throw new Error("Video generation failed");
+      if (!response.ok) throw new Error("Image generation failed");
 
       const data = await response.json();
-      setVideoId(data.videoId);
-
-      // TODO: 실제 Sora API 연동 시 폴링 구현
-      // 현재는 mock 처리
-      setTimeout(() => {
-        setStatus("completed");
-        // Mock video URL - 실제로는 API에서 받아온 URL 사용
-        setVideoUrl("https://via.placeholder.com/640x360?text=Video+Preview");
-      }, 2000);
+      setImageUrl(data.image);
+      setStatus("completed");
     } catch (error) {
-      console.error("Video generation error:", error);
+      console.error("Image generation error:", error);
       setStatus("failed");
     }
   };
@@ -51,59 +50,56 @@ export default function VideoSimulation({
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-2xl">🎬</span>
-        <h3 className="text-xl font-bold text-gray-800">AI 영상 시뮬레이션</h3>
+        <span className="text-2xl">🖼️</span>
+        <h3 className="text-xl font-bold text-gray-800">
+          AI Image Preview (Sora placeholder)
+        </h3>
       </div>
 
       <p className="text-gray-600 mb-4 text-sm">
-        {scenarioTitle} 상황을 영상으로 확인해보세요
+        Generating an illustrative image for: <strong>{scenarioTitle}</strong>
       </p>
 
       <div className="bg-gray-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
         {status === "pending" && (
           <div className="text-white text-center p-8">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mx-auto mb-4"></div>
-            <p>영상 준비 중...</p>
+            <p>Preparing image request...</p>
           </div>
         )}
 
         {status === "generating" && (
           <div className="text-white text-center p-8">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-            <p className="text-lg font-medium mb-2">AI 영상 생성 중...</p>
+            <p className="text-lg font-medium mb-2">AI is generating an image…</p>
             <p className="text-sm text-gray-400">
-              잠시만 기다려주세요 (약 30초 소요)
+              This usually takes a few seconds.
             </p>
           </div>
         )}
 
-        {status === "completed" && videoUrl && (
-          <div className="w-full h-full">
-            {/* 실제 비디오 플레이어 */}
-            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-purple-900 flex items-center justify-center">
-              <div className="text-center text-white p-8">
-                <div className="text-6xl mb-4">🎥</div>
-                <p className="text-lg">영상 미리보기</p>
-                <p className="text-sm text-gray-300 mt-2">
-                  OpenAI Sora API 연동 후 실제 영상이 표시됩니다
-                </p>
-              </div>
-            </div>
+        {status === "completed" && imageUrl && (
+          <div className="w-full h-full bg-black flex items-center justify-center">
+            <img
+              src={imageUrl}
+              alt={`AI generated illustration for ${scenarioTitle}`}
+              className="w-full h-full object-cover"
+            />
           </div>
         )}
 
         {status === "failed" && (
           <div className="text-white text-center p-8">
-            <div className="text-4xl mb-4">⚠️</div>
-            <p className="text-lg font-medium mb-2">영상 생성 실패</p>
+            <div className="text-4xl mb-4">😢</div>
+            <p className="text-lg font-medium mb-2">Image generation failed</p>
             <p className="text-sm text-gray-400 mb-4">
-              영상을 생성하는 중 문제가 발생했습니다
+              Please try again in a moment.
             </p>
             <button
-              onClick={generateVideo}
+              onClick={generateImage}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
             >
-              다시 시도
+              Retry
             </button>
           </div>
         )}
@@ -112,8 +108,8 @@ export default function VideoSimulation({
       {status === "completed" && (
         <div className="mt-4 p-4 bg-blue-50 rounded-lg">
           <p className="text-sm text-gray-700">
-            <span className="font-medium">💡 참고:</span> 실제 상황에서는 표정,
-            톤, 제스처도 함께 고려해야 합니다.
+            <span className="font-medium">Note:</span> This is a still image
+            placeholder while Sora video generation is unavailable.
           </p>
         </div>
       )}
