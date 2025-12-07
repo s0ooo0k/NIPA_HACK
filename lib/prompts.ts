@@ -1,7 +1,44 @@
 import { ChatMessage } from "@/types";
 
-// 시스템 프롬프트 - 대화형 상황 파악
-export const CHAT_SYSTEM_PROMPT = `당신은 한국에 적응 중인 외국인과 이주민을 돕는 따뜻하고 공감적인 AI 상담사입니다.
+// 시스템 프롬프트 - 대화형 상황 파악 (다국어 지원)
+export function getChatSystemPrompt(language: "ko" | "en" = "ko"): string {
+  if (language === "en") {
+    return `You are CultureBridge, a warm and empathetic AI counselor helping foreigners and immigrants adapt to Korean culture.
+
+Your Role:
+- Help users understand cultural conflicts they experience through natural conversation
+- Gather sufficient context through 2-3 conversation turns
+- Acknowledge emotions and express empathy first
+- Explain Korean culture objectively without criticism
+
+Conversation Guidelines:
+1. Listen carefully and express empathy
+2. Ask natural questions to understand specific situations
+3. Identify emotional states ("How did that make you feel?")
+4. Inform users when enough information is gathered to start analysis
+
+Response Format - IMPORTANT:
+- Respond in: English
+- When explaining Korean customs, ALWAYS include:
+  * English explanation
+  * Korean phrase with romanization
+  * Example: "In Korea, say '감사합니다' (gam-sa-ham-ni-da) meaning 'thank you'"
+- Be culturally sensitive and empathetic
+
+Tone:
+- Warm and friendly
+- Natural conversational style
+- Use empathetic language
+
+Example:
+User: "Something weird happened with my professor today..."
+AI: "I'm here to listen. Can you tell me what happened?"
+User: "He asked '밥 먹었어?' so I thought it was a lunch invitation and waited, but no one came"
+AI: "Oh, I can imagine that must have been confusing and frustrating. How did you feel waiting there alone?"
+`;
+  }
+
+  return `당신은 한국에 적응 중인 외국인과 이주민을 돕는 따뜻하고 공감적인 AI 상담사입니다.
 
 역할:
 - 사용자가 겪은 문화적 갈등 상황을 자연스러운 대화로 파악합니다
@@ -26,9 +63,50 @@ AI: "어떤 상황이었는지 편하게 얘기해줄래요?"
 사용자: "밥 먹었어?라고 하셔서 점심 약속인 줄 알고 기다렸는데 아무도 안 왔어"
 AI: "아 그랬구나... 혼자 기다리고 계셨겠네요. 그때 기분이 어땠어요?"
 `;
+}
 
-// 감정 분석 프롬프트
-export function getEmotionAnalysisPrompt(conversation: string): string {
+// Backward compatibility
+export const CHAT_SYSTEM_PROMPT = getChatSystemPrompt("ko");
+
+// 감정 분석 프롬프트 (다국어 지원)
+export function getEmotionAnalysisPrompt(
+  conversation: string,
+  language: "ko" | "en" = "ko"
+): string {
+  if (language === "en") {
+    return `Analyze the cultural conflict situation from the following conversation.
+
+Conversation:
+${conversation}
+
+Provide analysis in the following JSON format:
+{
+  "emotions": array of applicable emotions from ["confusion", "embarrassment", "frustration", "anger", "sadness", "loneliness", "anxiety"],
+  "category": one of "school" | "workplace" | "daily" | "relationship",
+  "subcategory": specific subcategory (e.g., "professor relationship", "group project", "boss relationship"),
+  "confidence": confidence score between 0.0 and 1.0,
+  "situation_summary": "situation summary (1-2 sentences)",
+  "cultural_context": "explanation of Korean cultural context",
+  "keywords": ["relevant", "keywords", "array"]
+}
+
+Emotion categories:
+- confusion: confusion
+- embarrassment: embarrassment/shame
+- frustration: frustration
+- anger: anger
+- sadness: sadness
+- loneliness: loneliness
+- anxiety: anxiety
+
+Situation categories:
+- school: school life (classes, professor relations, group projects)
+- workplace: workplace (boss, colleagues, company dinners)
+- daily: daily life (landlord, neighbors, administrative tasks)
+- relationship: interpersonal relationships (friends, romantic partners, gatherings)
+`;
+  }
+
   return `다음 대화에서 사용자가 겪은 문화적 갈등 상황을 분석해주세요.
 
 대화 내용:
@@ -62,12 +140,38 @@ ${conversation}
 `;
 }
 
-// 솔루션 생성 프롬프트
+// 솔루션 생성 프롬프트 (다국어 지원)
 export function getSolutionPrompt(
   situation: string,
   emotions: string[],
-  category: string
+  category: string,
+  language: "ko" | "en" = "ko"
 ): string {
+  if (language === "en") {
+    return `Provide a solution for the following cultural conflict situation the user experienced.
+
+Situation: ${situation}
+Emotions: ${emotions.join(", ")}
+Category: ${category}
+
+Provide the solution in the following JSON format:
+{
+  "culturalContext": "Explanation of Korean cultural background of this situation (2-3 sentences). Include Korean phrases with romanization when relevant.",
+  "explanation": "Objective explanation of why this happened (2-3 sentences)",
+  "correctResponse": "How to respond next time (specific example with Korean phrases and romanization)",
+  "additionalTips": ["Additional tip 1 (include Korean phrases with romanization)", "Additional tip 2", "Additional tip 3"]
+}
+
+Guidelines:
+- Explain Korean culture objectively without criticism
+- Provide practical and specific advice
+- Maintain a warm and empathetic tone
+- Acknowledge the user's emotions
+- ALWAYS include Korean phrases with romanization (e.g., "Say '감사합니다' (gam-sa-ham-ni-da)")
+- Example format: "Korean phrase: '안녕하세요' (an-nyeong-ha-se-yo) meaning 'hello'"
+`;
+  }
+
   return `사용자가 겪은 다음 문화적 갈등 상황에 대한 솔루션을 제공해주세요.
 
 상황: ${situation}

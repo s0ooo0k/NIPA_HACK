@@ -1,19 +1,22 @@
 "use client";
 
 import { Solution } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface SolutionCardProps {
   solution: Solution;
 }
 
 export default function SolutionCard({ solution }: SolutionCardProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
       {/* 문화적 맥락 */}
       <div>
         <div className="flex items-center gap-2 mb-3">
           <span className="text-2xl">💡</span>
-          <h3 className="text-xl font-bold text-gray-800">이 상황 이해하기</h3>
+          <h3 className="text-xl font-bold text-gray-800">{t("solution.context")}</h3>
         </div>
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
           <p className="text-gray-700 leading-relaxed">
@@ -26,7 +29,7 @@ export default function SolutionCard({ solution }: SolutionCardProps) {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <span className="text-2xl">📖</span>
-          <h3 className="text-lg font-bold text-gray-800">상세 설명</h3>
+          <h3 className="text-lg font-bold text-gray-800">{t("solution.title")}</h3>
         </div>
         <p className="text-gray-700 leading-relaxed">{solution.explanation}</p>
       </div>
@@ -36,7 +39,7 @@ export default function SolutionCard({ solution }: SolutionCardProps) {
         <div className="flex items-center gap-2 mb-3">
           <span className="text-2xl">✅</span>
           <h3 className="text-lg font-bold text-gray-800">
-            다음에 이렇게 해보세요
+            {t("solution.response")}
           </h3>
         </div>
         <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
@@ -51,7 +54,7 @@ export default function SolutionCard({ solution }: SolutionCardProps) {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-2xl">💭</span>
-            <h3 className="text-lg font-bold text-gray-800">추가 팁</h3>
+            <h3 className="text-lg font-bold text-gray-800">{t("solution.tips")}</h3>
           </div>
           <ul className="space-y-2">
             {solution.additionalTips.map((tip, index) => (
