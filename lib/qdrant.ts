@@ -17,7 +17,7 @@ async function qdrantFetch(path: string, init: RequestInit = {}) {
   };
 
   if (QDRANT_API_KEY) {
-    headers["api-key"] = QDRANT_API_KEY;
+    headers["Api-Key"] = QDRANT_API_KEY;
   }
 
   const res = await fetch(`${QDRANT_URL}${path}`, {
@@ -41,6 +41,16 @@ export async function ensureCollection(vectorSize: number) {
         size: vectorSize,
         distance: "Cosine",
       },
+    }),
+  });
+}
+
+export async function createPayloadIndex(fieldName: string, fieldType: "keyword" | "integer" | "float" | "geo" = "keyword") {
+  return qdrantFetch(`/collections/${QDRANT_COLLECTION}/index`, {
+    method: "PUT",
+    body: JSON.stringify({
+      field_name: fieldName,
+      field_schema: fieldType,
     }),
   });
 }
@@ -75,6 +85,7 @@ export async function searchPoints(options: {
       vector,
       limit: topK,
       filter,
+      with_payload: true,
     }),
   });
 }

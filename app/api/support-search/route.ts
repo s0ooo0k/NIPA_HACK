@@ -83,12 +83,16 @@ export async function POST(request: NextRequest) {
       filter: filter.must.length ? filter : undefined,
     });
 
+    console.log("[support-search] Qdrant raw response:", JSON.stringify(res, null, 2));
+
     const results =
       res?.result?.map((item: any) => ({
         id: item.id,
         score: item.score,
         ...item.payload,
       })) || [];
+
+    console.log("[support-search] Parsed results:", JSON.stringify(results, null, 2));
 
     return NextResponse.json({
       collection: qdrantConfig.collection,

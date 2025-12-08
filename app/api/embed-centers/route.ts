@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { ensureCollection, upsertPoints, qdrantConfig } from "@/lib/qdrant";
+import { ensureCollection, upsertPoints, qdrantConfig, createPayloadIndex } from "@/lib/qdrant";
 import centersData from "@/data/center.json";
 
 const openai = new OpenAI({
@@ -29,8 +29,10 @@ function buildPayload(center: Center) {
     cost_type: center.cost_type,
     session_type: center.session_type,
     website: center.website,
-    phone: center.phone,
-    address: center.address,
+    phone: (center as any).phone,
+    address: (center as any).address,
+    description: center.description,
+    description_ko: center.description_ko,
   };
 }
 
@@ -59,7 +61,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "QDRANT_URL missing" }, { status: 400 });
     }
 
-    await ensureCollection(VECTOR_SIZE);
+    // Try to ensure collection exists, but continue if it fails (might lack global permissions)
+    try {
+      await ensureCollection(VECTOR_SIZE);
+    } catch (err: any) {
+      console.warn("[embed-centers] ensureCollection failed (might already exist or lack permissions):", err.message);
+    }
 
   const centers: Center[] = centersData.centers || [];
   const texts = centers.map((c) => buildText(c));
@@ -77,6 +84,14 @@ export async function POST(request: NextRequest) {
     }));
 
     await upsertPoints(points);
+
+    // Create index for session_type field to enable filtering
+    try {
+      await createPayloadIndex("session_type", "keyword");
+      console.log("[embed-centers] Created index for session_type");
+    } catch (err: any) {
+      console.warn("[embed-centers] Failed to create index (might already exist):", err.message);
+    }
 
     return NextResponse.json({
       collection: qdrantConfig.collection,

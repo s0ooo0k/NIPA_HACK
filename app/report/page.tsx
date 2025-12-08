@@ -7,6 +7,7 @@ import EmotionAnalysis from "@/components/EmotionAnalysis";
 import { useLanguage } from "@/context/LanguageContext";
 import { ReportPayload, loadReportPayload } from "@/lib/reportStorage";
 import { ChatMessage } from "@/types";
+import Link from "next/link";
 
 export default function ReportPage() {
   const { lang } = useLanguage();
@@ -100,6 +101,25 @@ export default function ReportPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="bg-white/70 backdrop-blur rounded-3xl shadow-xl p-6 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-gray-800">
+              {lang === "ko" ? "맞춤 지원 찾기" : "Find tailored support"}
+            </h3>
+            <p className="text-xs text-gray-600">
+              {lang === "ko"
+                ? "온라인/오프라인, 커뮤니티/상담 중 선택해서 추천을 받아보세요."
+                : "Choose online/offline and community/counseling to get recommendations."}
+            </p>
+          </div>
+          <Link
+            href="/support"
+            className="px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold hover:shadow-md transition-all"
+          >
+            {lang === "ko" ? "지원 검색으로" : "Go to support search"}
+          </Link>
         </div>
       </div>
     </main>
