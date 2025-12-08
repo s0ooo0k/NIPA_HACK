@@ -48,10 +48,12 @@ export default function VoiceRecorder({
         const audioBlob = new Blob(audioChunksRef.current, {
           type: "audio/webm",
         });
+        setIsRecording(false);
         await transcribeAudio(audioBlob);
 
         // Clean up the stream
         stream.getTracks().forEach((track) => track.stop());
+        mediaRecorderRef.current = null;
       };
 
       mediaRecorder.start();
@@ -63,10 +65,11 @@ export default function VoiceRecorder({
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || isProcessing) return;
+    setIsRecording(false);
+    recorder.stop();
+    mediaRecorderRef.current = null;
   };
 
   const transcribeAudio = async (audioBlob: Blob) => {

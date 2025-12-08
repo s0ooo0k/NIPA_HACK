@@ -217,6 +217,25 @@ export function getRelatedScenariosPrompt(
 `;
 }
 
+// Canned 영상 후보 중 최적 선택 프롬프트
+export function getBestCannedVideoPrompt(
+  conversation: string,
+  candidates: { id: string; title: string }[]
+): string {
+  return `다음 대화 내용을 바탕으로, 아래 제공된 후보 ID 중에서 가장 비슷한 한국 문화 상황을 1개 선택해주세요.
+
+대화:
+${conversation}
+
+후보 목록 (id: 제목):
+${candidates.map((c) => `- ${c.id}: ${c.title}`).join("\n")}
+
+반환 형식(JSON):
+{
+  "id": "선택한 후보 id"
+}`;
+}
+
 // 대화 히스토리를 문자열로 변환
 export function formatConversationHistory(messages: ChatMessage[]): string {
   return messages
@@ -234,7 +253,7 @@ export function buildSimulationPromptFromConversation(
   const history = formatConversationHistory(messages);
   return [
     "Create one illustrative scene (image only, no text on the image) that captures the Korean cultural misunderstanding in this conversation.",
-    "Realistic, warm, modern (Apple/Toss-like aesthetic), soft lighting, subtle gradients. Show a gentle resolution cue.",
+    "Realistic human characters (photorealistic people), warm modern style, soft lighting, subtle gradients. Show a gentle resolution cue.",
     "Conversation transcript:",
     history,
   ].join("\n");

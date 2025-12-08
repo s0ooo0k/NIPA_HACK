@@ -95,6 +95,7 @@ export default function ChatInterface({
       }
 
       const audio = new Audio(audioUrl);
+      audio.playbackRate = 1.2;
       audioRef.current = audio;
 
       audio.onended = () => {
@@ -108,6 +109,13 @@ export default function ChatInterface({
       setIsPlayingAudio(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      stopAudio();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,7 +244,7 @@ export default function ChatInterface({
           <div className="bg-white/80 backdrop-blur border border-black/5 rounded-2xl px-4 py-3 shadow-sm max-w-sm">
             <p className="text-sm font-semibold text-gray-800 mb-2">
               {lang === "ko"
-                ? "다음 단계를 골라보세요"
+                ? "다음 단계를 골라보세요. 시뮬레이션을 통해 문화 차이를 촘촘하게 할 수 있습니다."
                 : "Choose the next step"}
             </p>
             <div className="flex flex-wrap gap-2">

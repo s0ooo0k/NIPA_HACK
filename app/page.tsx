@@ -16,6 +16,8 @@ import {
   Scenario,
 } from "@/types";
 import { saveReportPayload } from "@/lib/reportStorage";
+import { cannedVideos } from "@/data/cannedVideos";
+import { findScenarioById } from "@/data/scenarios";
 
 export default function Home() {
   const { lang, t } = useLanguage();
@@ -267,7 +269,9 @@ export default function Home() {
         url: data.url,
         source: data.source,
       });
-      const analysisData = await analyzeConversation(messages, { silent: true });
+      const analysisData = await analyzeConversation(messages, {
+        silent: true,
+      });
       if (analysisData) {
         setAnalysis(analysisData.analysis);
         setSolution(analysisData.solution);
@@ -281,7 +285,7 @@ export default function Home() {
         role: "assistant",
         content:
           lang === "ko"
-            ? "시뮬레이션을 생성했어요. 오른쪽 화면에서 확인해보세요."
+            ? "시뮬레이션을 생성했어요. 시뮬레이션을 보고 어떻게 대답해야될지 작성해보세요."
             : "Simulation is ready. Check it on the right viewer.",
         timestamp: new Date(),
       };
@@ -302,58 +306,88 @@ export default function Home() {
     }
   };
 
-  const handleSimulateSimilar = () => {
-    if (relatedScenarios.length > 0) {
-      const scenario = relatedScenarios[0];
-      setShowAnalysis(true);
-      setIsSimLoading(true);
-      setSimulationResult(null);
-      setSimulationStarted(true);
-
-      fetch("/api/video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenarioId: scenario.id }),
-      })
-        .then(async (res) => {
-          if (!res.ok) throw new Error("Similar simulation failed");
-          const data = await res.json();
-
-          setSimulationResult({
-            image: data.fallbackImage,
-            url: data.url,
-            source: data.source,
-          });
-          setShowAnalysis(true);
-          setShowEmotionPanel(false);
-
-          const simMsg: ChatMessage = {
-            id: Date.now().toString(),
-            role: "assistant",
-            content:
-              lang === "ko"
-                ? "비슷한 상황을 시뮬레이션했어요. 오른쪽 화면에서 확인해보세요."
-                : "Generated a similar scenario. Check the viewer on the right.",
-            timestamp: new Date(),
-          };
-          setMessages((prev) => [...prev, simMsg]);
-          setEvaluationPending(true);
-          setEvaluationContext(
-            lang === "ko"
-              ? `유사 상황: ${scenario.korean}`
-              : `Similar scenario: ${scenario.korean}`
-          );
-        })
-        .catch((err) => {
-          console.error(err);
-          setSimulationResult({
-            image: undefined,
-            url: undefined,
-            source: "error",
-          });
-        })
-        .finally(() => setIsSimLoading(false));
+  const handleSimulateSimilar = async () => {
+    if (relatedScenarios.length === 0) {
+      // Run analysis to populate related scenarios if not present
+      const analyzeResult = await analyzeConversation(messages, {
+        silent: true,
+      });
+      if (analyzeResult) {
+        setRelatedScenarios(analyzeResult.relatedScenarios || []);
+        setAnalysis(analyzeResult.analysis);
+        setSolution(analyzeResult.solution);
+        setReportEnabled(true);
+      }
     }
+
+    setShowAnalysis(true);
+    setIsSimLoading(true);
+    setSimulationResult(null);
+    setSimulationStarted(true);
+
+    // Ask LLM to pick best canned video ID
+    fetch("/api/canned-similar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages, language: lang }),
+    })
+      .then(async (pickRes) => {
+        if (!pickRes.ok) throw new Error("Pick canned failed");
+        const pickData = await pickRes.json();
+        const scenarioId =
+          pickData?.scenarioId ||
+          relatedScenarios[0]?.id ||
+          cannedVideos[0]?.scenarioId;
+        const scenario =
+          relatedScenarios.find((s) => s.id === scenarioId) ||
+          findScenarioById(scenarioId) ||
+          relatedScenarios[0];
+
+        return { scenarioId, scenario };
+      })
+      .then(async ({ scenarioId, scenario }) => {
+        const res = await fetch("/api/video", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scenarioId }),
+        });
+        if (!res.ok) throw new Error("Similar simulation failed");
+        const data = await res.json();
+
+        setSimulationResult({
+          image: data.fallbackImage,
+          url: data.url,
+          source: data.source,
+        });
+        setShowAnalysis(true);
+        setShowEmotionPanel(false);
+
+        const simMsg: ChatMessage = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content:
+            lang === "ko"
+              ? "비슷한 상황을 시뮬레이션했어요. 시뮬레이션을 보고 어떻게 대답해야될지 작성해보세요."
+              : "Generated a similar scenario. Check the viewer on the right.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, simMsg]);
+        setEvaluationPending(true);
+        setEvaluationContext(
+          lang === "ko"
+            ? `유사 상황: ${scenario.korean}`
+            : `Similar scenario: ${scenario.korean}`
+        );
+      })
+      .catch((err) => {
+        console.error(err);
+        setSimulationResult({
+          image: undefined,
+          url: undefined,
+          source: "error",
+        });
+      })
+      .finally(() => setIsSimLoading(false));
   };
 
   return (
@@ -422,7 +456,10 @@ export default function Home() {
             {/* Right: Simulation & Analysis */}
             <div className="space-y-6">
               {simulationStarted && (
-                <SimulationPanel result={simulationResult} loading={isSimLoading} />
+                <SimulationPanel
+                  result={simulationResult}
+                  loading={isSimLoading}
+                />
               )}
 
               {showAnalysis && showEmotionPanel && analysis && (
