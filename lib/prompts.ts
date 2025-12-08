@@ -3,7 +3,7 @@ import { ChatMessage } from "@/types";
 // 시스템 프롬프트 - 대화형 상황 파악 (다국어 지원)
 export function getChatSystemPrompt(language: "ko" | "en" = "ko"): string {
   if (language === "en") {
-    return `You are CultureBridge, a warm and empathetic AI counselor helping foreigners and immigrants adapt to Korean culture.
+    return `You are chomchom, a warm and empathetic AI counselor helping foreigners and immigrants adapt to Korean culture.
 
 Your Role:
 - Help users understand cultural conflicts they experience through natural conversation
@@ -74,16 +74,17 @@ export function getEmotionAnalysisPrompt(
   language: "ko" | "en" = "ko"
 ): string {
   if (language === "en") {
-    return `Analyze the cultural conflict situation from the following conversation.
+    return `Analyze the cultural conflict situation from the following conversation. Include granular emotion scores.
 
 Conversation:
 ${conversation}
 
-Provide analysis in the following JSON format:
+Return JSON in this shape (only JSON):
 {
   "emotions": array of applicable emotions from ["confusion", "embarrassment", "frustration", "anger", "sadness", "loneliness", "anxiety"],
-  "category": one of "school" | "workplace" | "daily" | "relationship",
-  "subcategory": specific subcategory (e.g., "professor relationship", "group project", "boss relationship"),
+  "emotion_scores": [{ "emotion": "frustration", "score": 0-100 }, { "emotion": "sadness", "score": 0-100 }], // include only applicable emotions, sorted desc by score
+  "category": "school" | "workplace" | "daily" | "relationship",
+  "subcategory": "specific subcategory (e.g., professor relationship, group project, boss relationship)",
   "confidence": confidence score between 0.0 and 1.0,
   "situation_summary": "situation summary (1-2 sentences)",
   "cultural_context": "explanation of Korean cultural context",
@@ -91,41 +92,36 @@ Provide analysis in the following JSON format:
 }
 
 Emotion categories:
-- confusion: confusion
-- embarrassment: embarrassment/shame
-- frustration: frustration
-- anger: anger
-- sadness: sadness
-- loneliness: loneliness
-- anxiety: anxiety
+- confusion, embarrassment, frustration, anger, sadness, loneliness, anxiety
 
 Situation categories:
 - school: school life (classes, professor relations, group projects)
 - workplace: workplace (boss, colleagues, company dinners)
 - daily: daily life (landlord, neighbors, administrative tasks)
 - relationship: interpersonal relationships (friends, romantic partners, gatherings)
-`;
+Only return valid JSON.`;
   }
 
-  return `다음 대화에서 사용자가 겪은 문화적 갈등 상황을 분석해주세요.
+  return `다음 대화에서 사용자 감정과 맥락을 분석해줘. 감정별 점수를 퍼센트(0~100)로 포함해.
 
-대화 내용:
+대화내용:
 ${conversation}
 
-다음 형식의 JSON으로 분석 결과를 제공해주세요:
+다음 JSON 형식만 반환:
 {
-  "emotions": ["confusion", "embarrassment", "frustration", "anger", "sadness", "loneliness", "anxiety"] 중 해당되는 감정들,
-  "category": "school" | "workplace" | "daily" | "relationship" 중 하나,
-  "subcategory": "교수 관계", "조별과제", "상사 관계" 등 구체적 하위 카테고리,
-  "confidence": 0.0 ~ 1.0 사이의 신뢰도,
+  "emotions": ["confusion", "embarrassment", "frustration", "anger", "sadness", "loneliness", "anxiety"] 중 적용 감정들,
+  "emotion_scores": [{ "emotion": "frustration", "score": 0-100 }, { "emotion": "sadness", "score": 0-100 }], // 적용 감정만 포함, 점수 내림차순
+  "category": "school" | "workplace" | "daily" | "relationship",
+  "subcategory": "교수 관계, 조별과제, 상사 관계 등 구체적 하위 카테고리",
+  "confidence": 0.0 ~ 1.0 사이 점수,
   "situation_summary": "상황 요약 (1-2문장)",
-  "cultural_context": "한국 문화적 맥락 설명",
+  "cultural_context": "한국 문화적 배경 설명",
   "keywords": ["관련", "키워드", "배열"]
 }
 
 감정 카테고리:
 - confusion: 혼란
-- embarrassment: 당혹/수치
+- embarrassment: 당황/수치
 - frustration: 좌절
 - anger: 분노
 - sadness: 슬픔
@@ -135,12 +131,11 @@ ${conversation}
 상황 카테고리:
 - school: 학교생활 (수업, 교수관계, 조별과제)
 - workplace: 직장생활 (상사, 동료, 회식문화)
-- daily: 일상생활 (집주인, 이웃, 행정처리)
-- relationship: 대인관계 (친구, 연인, 모임)
-`;
+- daily: 일상생활 (집주인/이웃, 행정처리)
+- relationship: 인간관계(친구, 연인, 모임)
+JSON만 반환해줘.`;
 }
 
-// 솔루션 생성 프롬프트 (다국어 지원)
 export function getSolutionPrompt(
   situation: string,
   emotions: string[],

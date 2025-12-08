@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
         situation_summary: string;
         cultural_context: string;
         keywords: string[];
+        emotion_scores?: { emotion: string; score: number }[];
       }
     >(analysisPrompt);
 
@@ -41,6 +42,12 @@ export async function POST(request: NextRequest) {
       category: analysisResult.category,
       subcategory: analysisResult.subcategory,
       confidence: analysisResult.confidence,
+      emotionScores: (analysisResult.emotion_scores || analysisResult.emotionScores || []).map(
+        (item) => ({
+          emotion: item.emotion as any,
+          score: item.score,
+        })
+      ),
     };
 
     // 3. 솔루션 생성

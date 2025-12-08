@@ -15,7 +15,7 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
     <div className="flex flex-col lg:flex-row items-center justify-center w-full gap-10">
       <div className="w-full lg:w-3/5 bg-white/30 backdrop-blur-xl rounded-3xl shadow-xl p-8 border border-white/40">
         <div className="space-y-3 mb-6">
-          <p className="text-sm font-semibold text-amber-700">CultureBridge</p>
+          <p className="text-sm font-semibold text-amber-700">chomchom</p>
           <h2 className="text-3xl font-bold text-gray-900 leading-tight">
             {lang === "ko"
               ? "문화 갈등을 함께 풀어주는 따뜻한 AI 코치"
@@ -56,8 +56,8 @@ export default function ModeSelector({ onSelectMode }: ModeSelectorProps) {
         <Image
           src={horang}
           alt="Horang mascot"
-          width={260}
-          height={260}
+          width={800}
+          height={800}
           className="object-contain drop-shadow-xl opacity-90"
           priority
         />

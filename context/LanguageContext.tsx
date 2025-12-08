@@ -15,7 +15,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 const translations: Record<Language, Record<string, string>> = {
   ko: {
     // Header
-    "app.title": "CultureBridge",
+    "app.title": "chomchom",
     "app.subtitle": "한국 문화 적응 도우미",
     
     // Mode Selection
@@ -86,7 +86,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // Header
-    "app.title": "CultureBridge",
+    "app.title": "chomchom",
     "app.subtitle": "Korean Culture Adaptation Assistant",
     
     // Mode Selection

@@ -9,12 +9,15 @@ import { PaperAirplaneIcon } from "@heroicons/react/24/solid";
 interface ChatInterfaceProps {
   messages: ChatMessage[];
   onSendMessage: (message: string) => void;
+  onOpenReport: () => void;
+  reportEnabled: boolean;
   isLoading: boolean;
   mode: "text" | "voice";
   onChangeMode: () => void;
   ctaStage: "none" | "offer" | "post-analysis";
   onContinueCTA: () => void;
   onAnalyzeCTA: () => void;
+  onOpenSimulationOptions: () => void;
   onSimulateCurrent: () => void;
   onSimulateSimilar: () => void;
   simulationResult?: { url?: string; image?: string; source?: string } | null;
@@ -25,12 +28,15 @@ interface ChatInterfaceProps {
 export default function ChatInterface({
   messages,
   onSendMessage,
+  onOpenReport,
+  reportEnabled,
   isLoading,
   mode,
   onChangeMode,
   ctaStage,
   onContinueCTA,
   onAnalyzeCTA,
+  onOpenSimulationOptions,
   onSimulateCurrent,
   onSimulateSimilar,
   simulationResult,
@@ -198,16 +204,6 @@ export default function ChatInterface({
               }`}
             >
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              {msg.videoUrl && (
-                <div className="mt-2.5 overflow-hidden rounded-xl bg-black">
-                  <video src={msg.videoUrl} controls className="w-full h-full object-cover" />
-                </div>
-              )}
-              {!msg.videoUrl && msg.imageUrl && (
-                <div className="mt-2.5 overflow-hidden rounded-xl">
-                  <img src={msg.imageUrl} alt="Simulation" className="w-full h-full object-cover" />
-                </div>
-              )}
             </div>
             <p className="text-xs text-gray-400 mb-1">
               {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -236,11 +232,11 @@ export default function ChatInterface({
               <button
                 onClick={() => {
                   stopAudio();
-                  onAnalyzeCTA();
+                  onOpenSimulationOptions();
                 }}
                 className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform"
               >
-                {lang === "ko" ? "대화 분석" : "Analyze conversation"}
+                {lang === "ko" ? "시뮬레이션" : "Run simulation"}
               </button>
               <button
                 onClick={() => {
@@ -290,32 +286,48 @@ export default function ChatInterface({
       {/* Input Area */}
       <div className="p-4 bg-white/60 border-t border-black/5">
         {mode === "voice" ? (
-          <div className="flex flex-col items-center justify-center h-24">
+          <div className="flex flex-col items-center justify-center h-28 space-y-3">
             <VoiceRecorder onTranscript={(text) => onSendMessage(text)} isLoading={isLoading || isPlayingAudio} />
             {isPlayingAudio && (
-              <p className="text-primary text-xs mt-3 font-medium">
+              <p className="text-primary text-xs font-medium">
                 {lang === "ko" ? "AI 응답을 재생 중..." : "Playing AI response..."}
               </p>
             )}
+            <button
+              onClick={onOpenReport}
+              disabled={isLoading || messages.length === 0 || !reportEnabled}
+              className="w-full text-sm font-semibold px-4 py-2 rounded-full border border-primary text-primary bg-white hover:bg-primary/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {lang === "ko" ? "감정 분석 리포트 보기" : "View emotion analysis report"}
+            </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex items-center gap-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={t("chat.placeholder")}
-              disabled={isLoading}
-              className="flex-1 w-full px-5 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-            />
+          <div className="space-y-2">
+            <form onSubmit={handleSubmit} className="flex items-center gap-3">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={t("chat.placeholder")}
+                disabled={isLoading}
+                className="flex-1 w-full px-5 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center hover:scale-110 disabled:scale-100 disabled:bg-gray-300 transition-all"
+              >
+                <PaperAirplaneIcon className="w-6 h-6" />
+              </button>
+            </form>
             <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center hover:scale-110 disabled:scale-100 disabled:bg-gray-300 transition-all"
+              onClick={onOpenReport}
+              disabled={isLoading || messages.length === 0 || !reportEnabled}
+              className="w-full text-sm font-semibold px-4 py-2 rounded-full border border-primary text-primary bg-white hover:bg-primary/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <PaperAirplaneIcon className="w-6 h-6" />
+              {lang === "ko" ? "감정 분석 리포트 보기" : "View emotion analysis report"}
             </button>
-          </form>
+          </div>
         )}
       </div>
     </div>

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ChatInterface from "@/components/ChatInterface";
 import ModeSelector from "@/components/ModeSelector";
 import EmotionAnalysis from "@/components/EmotionAnalysis";
 import SolutionCard from "@/components/SolutionCard";
+import SimulationPanel from "@/components/SimulationPanel";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -13,9 +15,11 @@ import {
   Solution,
   Scenario,
 } from "@/types";
+import { saveReportPayload } from "@/lib/reportStorage";
 
 export default function Home() {
   const { lang, t } = useLanguage();
+  const router = useRouter();
   const [mode, setMode] = useState<"text" | "voice" | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +39,9 @@ export default function Home() {
   const [isSimLoading, setIsSimLoading] = useState(false);
   const [evaluationPending, setEvaluationPending] = useState(false);
   const [evaluationContext, setEvaluationContext] = useState("");
+  const [reportEnabled, setReportEnabled] = useState(false);
+  const [showEmotionPanel, setShowEmotionPanel] = useState(false);
+  const [simulationStarted, setSimulationStarted] = useState(false);
 
   const handleSendMessage = async (content: string) => {
     if (evaluationPending) {
@@ -62,7 +69,10 @@ export default function Home() {
         const feedbackMessage: ChatMessage = {
           id: (Date.now() + 2).toString(),
           role: "assistant",
-          content: `점수: ${data.score}/100\n피드백: ${data.feedback}\n더 나은 답: ${data.betterAnswer}`,
+          content:
+            lang === "ko"
+              ? `점수: ${data.score}/100\n피드백: ${data.feedback}\n더 나은 답변: ${data.betterAnswer}`
+              : `Score: ${data.score}/100\nFeedback: ${data.feedback}\nBetter answer: ${data.betterAnswer}`,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, feedbackMessage]);
@@ -113,6 +123,7 @@ export default function Home() {
         const next = prev + 1;
         if (next >= 3 && ctaStage === "none") {
           setCtaStage("offer");
+          setReportEnabled(true);
         }
         return next;
       });
@@ -133,7 +144,10 @@ export default function Home() {
     }
   };
 
-  const analyzeConversation = async (conversationMessages: ChatMessage[]) => {
+  const analyzeConversation = async (
+    conversationMessages: ChatMessage[],
+    options: { silent?: boolean } = {}
+  ) => {
     try {
       setIsLoading(true);
 
@@ -150,24 +164,34 @@ export default function Home() {
 
       const analyzeData = await analyzeResponse.json();
 
-      setAnalysis(analyzeData.analysis);
-      setSolution(analyzeData.solution);
-      setRelatedScenarios(analyzeData.relatedScenarios || []);
-      setShowAnalysis(true);
+      if (!options.silent) {
+        setAnalysis(analyzeData.analysis);
+        setSolution(analyzeData.solution);
+        setRelatedScenarios(analyzeData.relatedScenarios || []);
+        setShowAnalysis(true);
+        setShowEmotionPanel(true);
 
-      const analysisCompleteMessage: ChatMessage = {
-        id: Date.now().toString(),
-        role: "assistant",
-        content:
-          lang === "ko"
-            ? "대화 분석이 끝났어요. 오른쪽에서 감정 분석과 제안 카드를 확인해보세요."
-            : "Analysis is ready. Check the right panel for insights and guidance.",
-        timestamp: new Date(),
+        const analysisCompleteMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content:
+            lang === "ko"
+              ? "분석을 완료했어요. 오른쪽 패널에서 결과를 확인해보세요."
+              : "Analysis is ready. Check the right panel for insights and guidance.",
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev, analysisCompleteMessage]);
+      }
+
+      return {
+        analysis: analyzeData.analysis,
+        solution: analyzeData.solution,
+        relatedScenarios: analyzeData.relatedScenarios || [],
       };
-
-      setMessages((prev) => [...prev, analysisCompleteMessage]);
     } catch (error) {
       console.error("Error analyzing conversation:", error);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -179,12 +203,15 @@ export default function Home() {
     setSolution(null);
     setRelatedScenarios([]);
     setShowAnalysis(false);
+    setShowEmotionPanel(false);
     setMode(null);
     setAssistantTurns(0);
     setCtaStage("none");
     setSimulationResult(null);
+    setSimulationStarted(false);
     setEvaluationPending(false);
     setEvaluationContext("");
+    setReportEnabled(false);
   };
 
   const handleSelectMode = (selectedMode: "text" | "voice") => {
@@ -206,8 +233,24 @@ export default function Home() {
     setAssistantTurns(0);
   };
 
+  const handleAnalyzeReport = async () => {
+    if (messages.length === 0 || isLoading) return;
+    const result = await analyzeConversation(messages, { silent: true });
+    if (!result) return;
+
+    saveReportPayload({
+      ...result,
+      messages,
+      lang,
+      generatedAt: new Date().toISOString(),
+    });
+
+    router.push("/report");
+  };
+
   const handleSimulateCurrent = async () => {
     try {
+      setSimulationStarted(true);
       setIsSimLoading(true);
       setSimulationResult(null);
 
@@ -219,24 +262,27 @@ export default function Home() {
 
       if (!res.ok) throw new Error("Simulation failed");
       const data = await res.json();
-      const isVideo =
-        data.url && typeof data.url === "string"
-          ? data.url.toLowerCase().includes(".mp4")
-          : false;
       setSimulationResult({
         image: data.fallbackImage,
         url: data.url,
         source: data.source,
       });
+      const analysisData = await analyzeConversation(messages, { silent: true });
+      if (analysisData) {
+        setAnalysis(analysisData.analysis);
+        setSolution(analysisData.solution);
+        setRelatedScenarios(analysisData.relatedScenarios || []);
+        setShowAnalysis(true);
+        setShowEmotionPanel(false);
+      }
+      setCtaStage("post-analysis");
       const simMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "assistant",
         content:
           lang === "ko"
-            ? "시뮬레이션 결과예요. 영상이나 이미지를 확인해보세요."
-            : "Here’s the simulation—check the video or image below.",
-        imageUrl: isVideo ? undefined : data.fallbackImage || data.url,
-        videoUrl: isVideo ? data.url : undefined,
+            ? "시뮬레이션을 생성했어요. 오른쪽 화면에서 확인해보세요."
+            : "Simulation is ready. Check it on the right viewer.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, simMessage]);
@@ -260,6 +306,10 @@ export default function Home() {
     if (relatedScenarios.length > 0) {
       const scenario = relatedScenarios[0];
       setShowAnalysis(true);
+      setIsSimLoading(true);
+      setSimulationResult(null);
+      setSimulationStarted(true);
+
       fetch("/api/video", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -268,30 +318,41 @@ export default function Home() {
         .then(async (res) => {
           if (!res.ok) throw new Error("Similar simulation failed");
           const data = await res.json();
-          const isVideo =
-            data.url && typeof data.url === "string"
-              ? data.url.toLowerCase().includes(".mp4")
-              : false;
+
+          setSimulationResult({
+            image: data.fallbackImage,
+            url: data.url,
+            source: data.source,
+          });
+          setShowAnalysis(true);
+          setShowEmotionPanel(false);
+
           const simMsg: ChatMessage = {
             id: Date.now().toString(),
             role: "assistant",
             content:
               lang === "ko"
-                ? "비슷한 상황 시뮬레이션입니다. 영상이나 이미지를 확인해보세요."
-                : "Here’s a similar scenario simulation—check the media below.",
-            imageUrl: isVideo ? undefined : data.fallbackImage || data.url,
-            videoUrl: isVideo ? data.url : undefined,
+                ? "비슷한 상황을 시뮬레이션했어요. 오른쪽 화면에서 확인해보세요."
+                : "Generated a similar scenario. Check the viewer on the right.",
             timestamp: new Date(),
           };
           setMessages((prev) => [...prev, simMsg]);
           setEvaluationPending(true);
           setEvaluationContext(
             lang === "ko"
-              ? `비슷한 상황: ${scenario.korean}`
+              ? `유사 상황: ${scenario.korean}`
               : `Similar scenario: ${scenario.korean}`
           );
         })
-        .catch((err) => console.error(err));
+        .catch((err) => {
+          console.error(err);
+          setSimulationResult({
+            image: undefined,
+            url: undefined,
+            source: "error",
+          });
+        })
+        .finally(() => setIsSimLoading(false));
     }
   };
 
@@ -309,7 +370,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg" />
               <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-700 bg-clip-text text-transparent">
-                CultureBridge
+                chomchom
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -341,12 +402,15 @@ export default function Home() {
               <ChatInterface
                 messages={messages}
                 onSendMessage={handleSendMessage}
+                onOpenReport={handleAnalyzeReport}
+                reportEnabled={reportEnabled}
                 isLoading={isLoading}
                 mode={mode}
                 onChangeMode={handleChangeMode}
                 ctaStage={ctaStage}
                 onContinueCTA={handleContinueCTA}
                 onAnalyzeCTA={handleAnalyzeCTA}
+                onOpenSimulationOptions={() => setCtaStage("post-analysis")}
                 onSimulateCurrent={handleSimulateCurrent}
                 onSimulateSimilar={handleSimulateSimilar}
                 simulationResult={simulationResult}
@@ -355,29 +419,31 @@ export default function Home() {
               />
             </div>
 
-            {/* Right: Analysis & Solution */}
+            {/* Right: Simulation & Analysis */}
             <div className="space-y-6">
+              {simulationStarted && (
+                <SimulationPanel result={simulationResult} loading={isSimLoading} />
+              )}
+
+              {showAnalysis && showEmotionPanel && analysis && (
+                <EmotionAnalysis analysis={analysis} />
+              )}
+              {showAnalysis && solution && <SolutionCard solution={solution} />}
+
               {!showAnalysis && (
                 <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-8 text-center">
-                  <div className="text-6xl mb-4 animate-bounce">💬</div>
+                  <div className="text-6xl mb-4 animate-bounce">🧭</div>
                   <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     {lang === "ko"
-                      ? "요즘 어떤 대화가 마음에 걸리세요?"
+                      ? "어떤 대화가 고민되시나요?"
                       : "What conversation is on your mind?"}
                   </h2>
                   <p className="text-gray-600 max-w-md mx-auto">
                     {lang === "ko"
-                      ? "한국에서 겪은 어려운 대화나 상황을 편하게 들려주세요. 감정과 맥락을 분석해서 더 나은 표현을 함께 찾아드릴게요."
+                      ? "한국에서 겪은 어려운 대화나 상황을 알려주세요. 맥락을 분석하고 더 나은 소통 방법을 제안해드릴게요."
                       : "Tell us about a difficult conversation or situation you've faced in Korea. We'll analyze the context and suggest better ways to communicate."}
                   </p>
                 </div>
-              )}
-
-              {showAnalysis && analysis && (
-                <>
-                  <EmotionAnalysis analysis={analysis} />
-                  {solution && <SolutionCard solution={solution} />}
-                </>
               )}
             </div>
           </div>

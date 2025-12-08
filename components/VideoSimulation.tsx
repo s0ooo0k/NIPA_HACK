@@ -2,14 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { VideoGenerationStatus } from "@/types";
-import { VideoCameraIcon, ExclamationTriangleIcon, ArrowPathIcon } from "@heroicons/react/24/solid";
+import {
+  VideoCameraIcon,
+  ExclamationTriangleIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/solid";
 
 interface VideoSimulationProps {
   scenarioId: string;
   scenarioTitle: string;
 }
 
-export default function VideoSimulation({ scenarioId, scenarioTitle }: VideoSimulationProps) {
+export default function VideoSimulation({
+  scenarioId,
+  scenarioTitle,
+}: VideoSimulationProps) {
   const [status, setStatus] = useState<VideoGenerationStatus>("pending");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -85,9 +92,19 @@ export default function VideoSimulation({ scenarioId, scenarioTitle }: VideoSimu
         {status === "completed" && (videoUrl || imageUrl) && (
           <div className="w-full h-full bg-black">
             {videoUrl ? (
-              <video src={videoUrl} controls className="w-full h-full object-cover" />
+              <video
+                src={videoUrl}
+                controls
+                className="w-full h-full object-cover"
+              />
             ) : (
-              imageUrl && <img src={imageUrl} alt={`AI simulation for ${scenarioTitle}`} className="w-full h-full object-cover" />
+              imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt={`AI simulation for ${scenarioTitle}`}
+                  className="w-full h-full object-cover"
+                />
+              )
             )}
           </div>
         )}

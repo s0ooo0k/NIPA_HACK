@@ -46,6 +46,7 @@ export interface EmotionAnalysis {
   category: Category;
   subcategory?: string;
   confidence: number;
+  emotionScores?: { emotion: Emotion; score: number }[];
 }
 
 // 솔루션 타입
