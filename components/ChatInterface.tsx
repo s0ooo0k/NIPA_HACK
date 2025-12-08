@@ -48,12 +48,17 @@ export default function ChatInterface({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsAbortRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const stopAudio = () => {
+    if (ttsAbortRef.current) {
+      ttsAbortRef.current.abort();
+      ttsAbortRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -77,11 +82,17 @@ export default function ChatInterface({
   const playAudioResponse = async (text: string) => {
     try {
       setIsPlayingAudio(true);
+      if (ttsAbortRef.current) {
+        ttsAbortRef.current.abort();
+      }
+      const controller = new AbortController();
+      ttsAbortRef.current = controller;
 
       const response = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
+        signal: controller.signal,
       });
 
       if (!response.ok) throw new Error("TTS failed");
@@ -104,6 +115,7 @@ export default function ChatInterface({
       };
 
       await audio.play();
+      ttsAbortRef.current = null;
     } catch (error) {
       console.error("Error playing audio:", error);
       setIsPlayingAudio(false);
@@ -327,7 +339,10 @@ export default function ChatInterface({
               </p>
             )}
             <button
-              onClick={onOpenReport}
+              onClick={() => {
+                stopAudio();
+                onOpenReport();
+              }}
               disabled={isLoading || messages.length === 0 || !reportEnabled}
               className="w-full text-sm font-semibold px-4 py-2 rounded-full border border-primary text-primary bg-white hover:bg-primary/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
@@ -356,7 +371,10 @@ export default function ChatInterface({
               </button>
             </form>
             <button
-              onClick={onOpenReport}
+              onClick={() => {
+                stopAudio();
+                onOpenReport();
+              }}
               disabled={isLoading || messages.length === 0 || !reportEnabled}
               className="w-full text-sm font-semibold px-4 py-2 rounded-full border border-primary text-primary bg-white hover:bg-primary/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
