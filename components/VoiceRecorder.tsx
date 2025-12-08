@@ -5,10 +5,21 @@ import { MicrophoneIcon, StopIcon } from "@heroicons/react/24/solid";
 
 interface VoiceRecorderProps {
   onTranscript: (text: string) => void;
-  isLoading: boolean;
+  isLoading?: boolean;
+  onBeforeRecord?: () => void;
+  idleText?: string;
+  recordingText?: string;
+  processingText?: string;
 }
 
-export default function VoiceRecorder({ onTranscript, isLoading }: VoiceRecorderProps) {
+export default function VoiceRecorder({
+  onTranscript,
+  isLoading,
+  onBeforeRecord,
+  idleText,
+  recordingText,
+  processingText,
+}: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -16,6 +27,9 @@ export default function VoiceRecorder({ onTranscript, isLoading }: VoiceRecorder
 
   const startRecording = async () => {
     try {
+      if (onBeforeRecord) {
+        onBeforeRecord();
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: "audio/webm",
@@ -82,8 +96,8 @@ export default function VoiceRecorder({ onTranscript, isLoading }: VoiceRecorder
     <div className="flex flex-col items-center gap-3">
       <button
         onClick={isRecording ? stopRecording : startRecording}
-        disabled={isLoading || isProcessing}
-        className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100 ${
+        disabled={isProcessing}
+        className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed ${
           isRecording
             ? "bg-red-500 hover:bg-red-600 animate-pulse"
             : "bg-primary hover:scale-110"
@@ -98,13 +112,17 @@ export default function VoiceRecorder({ onTranscript, isLoading }: VoiceRecorder
 
       <div className="text-center h-5">
         {isRecording && (
-          <p className="text-red-500 font-medium animate-pulse text-sm">Recording...</p>
+          <p className="text-red-500 font-medium animate-pulse text-sm">
+            {recordingText ?? "Recording..."}
+          </p>
         )}
         {isProcessing && (
-          <p className="text-primary font-medium text-sm">Processing audio...</p>
+          <p className="text-primary font-medium text-sm">
+            {processingText ?? "Processing audio..."}
+          </p>
         )}
-        {!isRecording && !isProcessing && (
-          <p className="text-gray-500 text-sm">Press the mic to talk</p>
+        {!isRecording && !isProcessing && (idleText ?? "Press the mic to talk") && (
+          <p className="text-gray-500 text-sm">{idleText ?? "Press the mic to talk"}</p>
         )}
       </div>
     </div>

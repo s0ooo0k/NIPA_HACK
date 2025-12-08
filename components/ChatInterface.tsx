@@ -147,7 +147,9 @@ export default function ChatInterface({
       <div className="p-4 border-b border-black/5">
         <div className="flex items-center justify-between">
           <div className="pl-2">
-            <h2 className="text-lg font-bold text-gray-800">{t("app.title")} AI</h2>
+            <h2 className="text-lg font-bold text-gray-800">
+              {t("app.title")} AI
+            </h2>
             <p className="text-xs text-gray-500">{t("app.subtitle")}</p>
           </div>
           <button
@@ -181,7 +183,9 @@ export default function ChatInterface({
               {suggestionChips.map((item) => (
                 <button
                   key={item.ko}
-                  onClick={() => onSendMessage(lang === "ko" ? item.msg : item.en)}
+                  onClick={() =>
+                    onSendMessage(lang === "ko" ? item.msg : item.en)
+                  }
                   className="p-3 bg-white shadow-md rounded-full hover:bg-gray-50 hover:shadow-lg transition-all"
                 >
                   {lang === "ko" ? item.ko : item.en}
@@ -194,7 +198,9 @@ export default function ChatInterface({
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex items-end gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex items-end gap-2 ${
+              msg.role === "user" ? "justify-end" : "justify-start"
+            }`}
           >
             <div
               className={`max-w-[80%] rounded-3xl px-5 py-3 shadow-md ${
@@ -206,7 +212,10 @@ export default function ChatInterface({
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
             </div>
             <p className="text-xs text-gray-400 mb-1">
-              {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {new Date(msg.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </p>
           </div>
         ))}
@@ -226,7 +235,9 @@ export default function ChatInterface({
         {ctaStage === "offer" && (
           <div className="bg-white/80 backdrop-blur border border-black/5 rounded-2xl px-4 py-3 shadow-sm max-w-sm">
             <p className="text-sm font-semibold text-gray-800 mb-2">
-              {lang === "ko" ? "다음 단계를 골라보세요" : "Choose the next step"}
+              {lang === "ko"
+                ? "다음 단계를 골라보세요"
+                : "Choose the next step"}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -254,7 +265,9 @@ export default function ChatInterface({
         {ctaStage === "post-analysis" && (
           <div className="bg-white/80 backdrop-blur border border-black/5 rounded-2xl px-4 py-3 shadow-sm max-w-sm">
             <p className="text-sm font-semibold text-gray-800 mb-2">
-              {lang === "ko" ? "어떤 시뮬레이션을 볼까요?" : "Which simulation would you like?"}
+              {lang === "ko"
+                ? "어떤 시뮬레이션을 볼까요?"
+                : "Which simulation would you like?"}
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -265,7 +278,11 @@ export default function ChatInterface({
                 className="px-4 py-1.5 rounded-full bg-primary text-white text-sm font-medium hover:scale-105 transition-transform disabled:opacity-60"
                 disabled={simulationLoading}
               >
-                {simulationLoading ? "생성 중..." : lang === "ko" ? "현재 상황" : "Current scenario"}
+                {simulationLoading
+                  ? "생성 중..."
+                  : lang === "ko"
+                  ? "현재 상황"
+                  : "Current scenario"}
               </button>
               <button
                 onClick={() => {
@@ -286,11 +303,19 @@ export default function ChatInterface({
       {/* Input Area */}
       <div className="p-4 bg-white/60 border-t border-black/5">
         {mode === "voice" ? (
-          <div className="flex flex-col items-center justify-center h-28 space-y-3">
-            <VoiceRecorder onTranscript={(text) => onSendMessage(text)} isLoading={isLoading || isPlayingAudio} />
+          <div className="flex flex-col items-center gap-3">
+            <div className="scale-90">
+              <VoiceRecorder
+                onTranscript={(text) => onSendMessage(text)}
+                onBeforeRecord={stopAudio}
+                idleText=""
+              />
+            </div>
             {isPlayingAudio && (
               <p className="text-primary text-xs font-medium">
-                {lang === "ko" ? "AI 응답을 재생 중..." : "Playing AI response..."}
+                {lang === "ko"
+                  ? "AI 응답을 재생 중이에요. 마이크를 누르면 재생이 멈추고 바로 녹음됩니다."
+                  : "AI audio is playing. Press the mic to stop and record your reply."}
               </p>
             )}
             <button
@@ -298,7 +323,9 @@ export default function ChatInterface({
               disabled={isLoading || messages.length === 0 || !reportEnabled}
               className="w-full text-sm font-semibold px-4 py-2 rounded-full border border-primary text-primary bg-white hover:bg-primary/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {lang === "ko" ? "감정 분석 리포트 보기" : "View emotion analysis report"}
+              {lang === "ko"
+                ? "감정 분석 리포트 보기"
+                : "View emotion analysis report"}
             </button>
           </div>
         ) : (
@@ -325,7 +352,9 @@ export default function ChatInterface({
               disabled={isLoading || messages.length === 0 || !reportEnabled}
               className="w-full text-sm font-semibold px-4 py-2 rounded-full border border-primary text-primary bg-white hover:bg-primary/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {lang === "ko" ? "감정 분석 리포트 보기" : "View emotion analysis report"}
+              {lang === "ko"
+                ? "감정 분석 리포트 보기"
+                : "View emotion analysis report"}
             </button>
           </div>
         )}
