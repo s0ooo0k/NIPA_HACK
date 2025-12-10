@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // 1. 대화 내용을 문자열로 변환
     const conversation = formatConversationHistory(messages);
 
-    // 2. 감정 분석
+    // 2. 감정 분석 (OpenAI GPT-4o with JSON mode)
     const analysisPrompt = getEmotionAnalysisPrompt(conversation, language);
     const analysisResult = await analyzeWithJSON<
       EmotionAnalysis & {
@@ -41,9 +41,18 @@ export async function POST(request: NextRequest) {
       category: analysisResult.category,
       subcategory: analysisResult.subcategory,
       confidence: analysisResult.confidence,
+<<<<<<< Updated upstream
+=======
+      emotionScores: (analysisResult.emotion_scores || analysisResult.emotionScores || []).map(
+        (item: any) => ({
+          emotion: item.emotion as any,
+          score: item.score,
+        })
+      ),
+>>>>>>> Stashed changes
     };
 
-    // 3. 솔루션 생성
+    // 3. 솔루션 생성 (OpenAI GPT-4o with JSON mode)
     const solutionPrompt = getSolutionPrompt(
       analysisResult.situation_summary,
       analysisResult.emotions,

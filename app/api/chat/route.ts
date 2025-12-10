@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendChatMessage } from "@/lib/openai";
+import { streamGeminiChat, Message } from "@/lib/gemini";
 import { getChatSystemPrompt } from "@/lib/prompts";
 import { ChatMessage } from "@/types";
 
@@ -19,28 +19,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 히스토리를 OpenAI 형식으로 변환
-    const openaiHistory = history.map((msg) => ({
-      role: msg.role as "user" | "assistant",
-      content: msg.content,
-    }));
-
     // 언어에 맞는 시스템 프롬프트 생성
     const systemPrompt = getChatSystemPrompt(language);
 
-    // AI 응답 생성
-    const response = await sendChatMessage(
-      message,
-      openaiHistory,
-      systemPrompt
-    );
+    // 히스토리를 Gemini 형식으로 변환
+    const messages: Message[] = [
+      { role: "system", content: systemPrompt },
+      ...history.map((msg) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      })),
+      { role: "user" as const, content: message }
+    ];
+
+    // Gemini로 AI 응답 생성 (스트리밍)
+    let fullResponse = "";
+    await streamGeminiChat(messages, (chunk) => {
+      fullResponse += chunk;
+    });
 
     // 대화가 충분한지 판단 (간단한 휴리스틱)
     const totalMessages = history.length + 1;
     const needsMoreInfo = totalMessages < 4; // 최소 2-3턴 대화
 
     return NextResponse.json({
-      message: response,
+      message: fullResponse,
       needsMoreInfo,
     });
   } catch (error) {
