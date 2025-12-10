@@ -1,3 +1,4 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,20 +6,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --app-bg: #f8f9fa;
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  background: var(--app-bg);
+  font-family: "Pretendard", "Pretendard Variable", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 @layer utilities {
@@ -26,7 +21,7 @@ body {
     text-wrap: balance;
   }
 
-  /* 애니메이션 딜레이 */
+  /* Animation Delays */
   .delay-100 {
     animation-delay: 0.1s;
   }
@@ -35,37 +30,21 @@ body {
   }
 }
 
-/* 스크롤바 스타일링 */
+/* Modern Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  background: #dcdcdc;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* 모바일 터치 최적화 */
-@media (hover: none) and (pointer: coarse) {
-  button,
-  a {
-    -webkit-tap-highlight-color: transparent;
-  }
-}
-
-/* 반응형 텍스트 크기 */
-@media (max-width: 640px) {
-  html {
-    font-size: 14px;
-  }
+  background: #FFC50F;
 }

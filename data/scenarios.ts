@@ -37,6 +37,20 @@ export const scenarios = {
       context: "맥락에 따라 진짜 괜찮다는 의미일 수도, 거절의 의미일 수도 있습니다. 표정과 톤을 함께 봐야 합니다.",
       videoPrompt: `식당에서 친구가 '더 먹을래?' 하고 물을 때 손을 저으며 '괜찮아요~'(거절). 다른 장면: 넘어진 사람에게 '괜찮아요?'라고 물을 때 '네 괜찮아요'(진짜 괜찮음). 배경: 식당, 거리. 오디오: 자연스러운 한국어 대화`,
     },
+    {
+      id: "oneul-jom-bappeune",
+      korean: "오늘 좀 바쁘네...",
+      literal: "I'm a bit busy today...",
+      actual: "간접적으로 도움을 기대하거나 야근을 암시",
+      context:
+        "한국 직장에서 상사가 '오늘 좀 바쁘네…'라고 말하면 직접적으로 요청하지 않아도 주변에서 눈치껏 남아 도와주길 기대하는 경우가 많습니다. 외국인 직원은 단순한 상태 표현으로 받아들여 퇴근하려다가 어색해질 수 있습니다.",
+      signs: [
+        "퇴근 시간 무렵에 바쁨을 강조",
+        "서류나 업무를 보며 한숨",
+        "주변 동료들이 조용히 자리 지키는 분위기",
+      ],
+      videoPrompt: `Korean office at 6 PM. A Korean manager sighs and says "오늘 좀 바쁘네..." while looking at documents. A foreign employee nearby starts packing their bag to leave, not understanding the implied request for help. Korean coworkers exchange knowing glances. 8 seconds, realistic, warm office lighting.`,
+    },
   ] as Scenario[],
 
   workplace: [
@@ -114,6 +128,22 @@ export const scenarios = {
       korean: "직장인/주부 구분",
       context: "한국에서는 '직장 다녀요?'라는 질문을 자주 합니다. 대화의 소재를 찾기 위한 질문입니다.",
       videoPrompt: `동네 마트에서 이웃을 만나 '요즘 뭐 하세요? 직장 다니세요?'라고 묻는 장면. 배경: 마트. 오디오: 마트 배경음, 한국어 대화`,
+    },
+    {
+      id: "mani-deuseyo",
+      korean: "많이 드세요~",
+      literal: "Eat a lot",
+      actual: "환대의 표현으로 음식을 계속 덜어줌",
+      context:
+        "가정식이나 식사 자리에서 호스트가 손님 접시에 계속 음식을 덜어주며 '많이 드세요~'라고 말하는 것은 친절과 환대 표현입니다. 손님은 배부르더라도 웃으며 감사 인사와 함께 예의 있게 양을 조절하는 표현을 사용하는 것이 자연스럽습니다.",
+      correctResponse:
+        "감사 인사 후 '정말 맛있어요! 조금만 더 먹을게요'처럼 부드럽게 양 조절 의사를 표현",
+      tips: [
+        "웃으며 감사 인사 먼저 하기",
+        "'조금만 주세요'처럼 완곡한 표현 사용",
+        "식사 중간에 칭찬하며 속도 조절",
+      ],
+      videoPrompt: `A Korean home dining table, family dinner setting. A Korean mother keeps putting food on a foreign guest's plate, repeatedly saying "많이 드세요~" (Eat a lot) with a warm smile. The guest's plate is already overflowing. The guest looks overwhelmed but tries to smile politely. 8 seconds, warm home lighting.`,
     },
   ] as Scenario[],
 };

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ChatInterface from "@/components/ChatInterface";
 import ModeSelector from "@/components/ModeSelector";
 import EmotionAnalysis from "@/components/EmotionAnalysis";
 import SolutionCard from "@/components/SolutionCard";
-import LearningOptions from "@/components/LearningOptions";
-import VideoSimulation from "@/components/VideoSimulation";
+import SimulationPanel from "@/components/SimulationPanel";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -15,21 +15,79 @@ import {
   Solution,
   Scenario,
 } from "@/types";
+import { saveReportPayload } from "@/lib/reportStorage";
+import { cannedVideos } from "@/data/cannedVideos";
+import { findScenarioById } from "@/data/scenarios";
 
 export default function Home() {
   const { lang, t } = useLanguage();
+  const router = useRouter();
   const [mode, setMode] = useState<"text" | "voice" | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [analysis, setAnalysis] = useState<EmotionAnalysisType | null>(null);
   const [solution, setSolution] = useState<Solution | null>(null);
   const [relatedScenarios, setRelatedScenarios] = useState<Scenario[]>([]);
-  const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(
-    null
-  );
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [assistantTurns, setAssistantTurns] = useState(0);
+  const [ctaStage, setCtaStage] = useState<"none" | "offer" | "post-analysis">(
+    "none"
+  );
+  const [simulationResult, setSimulationResult] = useState<{
+    url?: string;
+    image?: string;
+    source?: string;
+  } | null>(null);
+  const [isSimLoading, setIsSimLoading] = useState(false);
+  const [evaluationPending, setEvaluationPending] = useState(false);
+  const [evaluationContext, setEvaluationContext] = useState("");
+  const [reportEnabled, setReportEnabled] = useState(false);
+  const [showEmotionPanel, setShowEmotionPanel] = useState(false);
+  const [simulationStarted, setSimulationStarted] = useState(false);
 
   const handleSendMessage = async (content: string) => {
+    if (evaluationPending) {
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "user",
+        content,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+
+      try {
+        setIsLoading(true);
+        const res = await fetch("/api/evaluate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userAnswer: content,
+            context: evaluationContext,
+            language: lang,
+          }),
+        });
+        if (!res.ok) throw new Error("Evaluation failed");
+        const data = await res.json();
+        const feedbackMessage: ChatMessage = {
+          id: (Date.now() + 2).toString(),
+          role: "assistant",
+          content:
+            lang === "ko"
+              ? `점수: ${data.score}/100\n피드백: ${data.feedback}\n더 나은 답변: ${data.betterAnswer}`
+              : `Score: ${data.score}/100\nFeedback: ${data.feedback}\nBetter answer: ${data.betterAnswer}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, feedbackMessage]);
+      } catch (error) {
+        console.error("Error evaluating answer:", error);
+      } finally {
+        setIsLoading(false);
+        setEvaluationPending(false);
+        setEvaluationContext("");
+      }
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
@@ -41,13 +99,12 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      // 1. 채팅 API 호출
       const chatResponse = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: content,
-          history: messages,
+          history: [...messages, userMessage],
           language: lang,
         }),
       });
@@ -64,17 +121,23 @@ export default function Home() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-
-      // 2. 충분한 대화가 모였다면 분석 시작
-      if (!chatData.needsMoreInfo && messages.length >= 2) {
-        await analyzeConversation([...messages, userMessage, assistantMessage]);
-      }
+      setAssistantTurns((prev) => {
+        const next = prev + 1;
+        if (next >= 3 && ctaStage === "none") {
+          setCtaStage("offer");
+          setReportEnabled(true);
+        }
+        return next;
+      });
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "죄송합니다. 응답을 생성하는 중 오류가 발생했습니다.",
+        content:
+          lang === "ko"
+            ? "메시지를 보내는 중 오류가 발생했어요. 잠시 후 다시 시도해주세요."
+            : "Something went wrong while sending. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -83,7 +146,10 @@ export default function Home() {
     }
   };
 
-  const analyzeConversation = async (conversationMessages: ChatMessage[]) => {
+  const analyzeConversation = async (
+    conversationMessages: ChatMessage[],
+    options: { silent?: boolean } = {}
+  ) => {
     try {
       setIsLoading(true);
 
@@ -100,32 +166,36 @@ export default function Home() {
 
       const analyzeData = await analyzeResponse.json();
 
-      setAnalysis(analyzeData.analysis);
-      setSolution(analyzeData.solution);
-      setRelatedScenarios(analyzeData.relatedScenarios || []);
-      setShowAnalysis(true);
+      if (!options.silent) {
+        setAnalysis(analyzeData.analysis);
+        setSolution(analyzeData.solution);
+        setRelatedScenarios(analyzeData.relatedScenarios || []);
+        setShowAnalysis(true);
+        setShowEmotionPanel(true);
 
-      // 분석 완료 메시지
-      const analysisCompleteMessage: ChatMessage = {
-        id: Date.now().toString(),
-        role: "assistant",
-        content:
-          "상황을 분석했어요! 아래에서 감정 분석 결과와 해결 방법을 확인해보세요.",
-        timestamp: new Date(),
+        const analysisCompleteMessage: ChatMessage = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content:
+            lang === "ko"
+              ? "분석을 완료했어요. 오른쪽 패널에서 결과를 확인해보세요."
+              : "Analysis is ready. Check the right panel for insights and guidance.",
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev, analysisCompleteMessage]);
+      }
+
+      return {
+        analysis: analyzeData.analysis,
+        solution: analyzeData.solution,
+        relatedScenarios: analyzeData.relatedScenarios || [],
       };
-
-      setMessages((prev) => [...prev, analysisCompleteMessage]);
     } catch (error) {
       console.error("Error analyzing conversation:", error);
+      return null;
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleSelectScenario = (scenarioId: string) => {
-    const scenario = relatedScenarios.find((s) => s.id === scenarioId);
-    if (scenario) {
-      setSelectedScenario(scenario);
     }
   };
 
@@ -134,9 +204,16 @@ export default function Home() {
     setAnalysis(null);
     setSolution(null);
     setRelatedScenarios([]);
-    setSelectedScenario(null);
     setShowAnalysis(false);
-    setMode(null); // 모드 선택 화면으로 돌아감
+    setShowEmotionPanel(false);
+    setMode(null);
+    setAssistantTurns(0);
+    setCtaStage("none");
+    setSimulationResult(null);
+    setSimulationStarted(false);
+    setEvaluationPending(false);
+    setEvaluationContext("");
+    setReportEnabled(false);
   };
 
   const handleSelectMode = (selectedMode: "text" | "voice") => {
@@ -147,29 +224,195 @@ export default function Home() {
     setMode(mode === "text" ? "voice" : "text");
   };
 
+  const handleContinueCTA = () => {
+    setCtaStage("none");
+    setAssistantTurns(0);
+  };
+
+  const handleAnalyzeCTA = async () => {
+    await analyzeConversation(messages);
+    setCtaStage("post-analysis");
+    setAssistantTurns(0);
+  };
+
+  const handleAnalyzeReport = async () => {
+    if (messages.length === 0 || isLoading) return;
+    const result = await analyzeConversation(messages, { silent: true });
+    if (!result) return;
+
+    saveReportPayload({
+      ...result,
+      messages,
+      lang,
+      generatedAt: new Date().toISOString(),
+    });
+
+    router.push("/report");
+  };
+
+  const handleSimulateCurrent = async () => {
+    try {
+      setSimulationStarted(true);
+      setIsSimLoading(true);
+      setSimulationResult(null);
+
+      const res = await fetch("/api/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+
+      if (!res.ok) throw new Error("Simulation failed");
+      const data = await res.json();
+      setSimulationResult({
+        image: data.fallbackImage,
+        url: data.url,
+        source: data.source,
+      });
+      const analysisData = await analyzeConversation(messages, {
+        silent: true,
+      });
+      if (analysisData) {
+        setAnalysis(analysisData.analysis);
+        setSolution(analysisData.solution);
+        setRelatedScenarios(analysisData.relatedScenarios || []);
+        setShowAnalysis(true);
+        setShowEmotionPanel(false);
+      }
+      setCtaStage("post-analysis");
+      const simMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content:
+          lang === "ko"
+            ? "시뮬레이션을 생성했어요. 시뮬레이션을 보고 어떻게 대답해야될지 작성해보세요."
+            : "Simulation is ready. Check it on the right viewer.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, simMessage]);
+      setEvaluationPending(true);
+      setEvaluationContext(
+        lang === "ko" ? "현재 상황 시뮬레이션" : "Current scenario simulation"
+      );
+    } catch (error) {
+      console.error("Simulation error:", error);
+      setSimulationResult({
+        image: undefined,
+        url: undefined,
+        source: "error",
+      });
+    } finally {
+      setIsSimLoading(false);
+    }
+  };
+
+  const handleSimulateSimilar = async () => {
+    if (relatedScenarios.length === 0) {
+      // Run analysis to populate related scenarios if not present
+      const analyzeResult = await analyzeConversation(messages, {
+        silent: true,
+      });
+      if (analyzeResult) {
+        setRelatedScenarios(analyzeResult.relatedScenarios || []);
+        setAnalysis(analyzeResult.analysis);
+        setSolution(analyzeResult.solution);
+        setReportEnabled(true);
+      }
+    }
+
+    setShowAnalysis(true);
+    setIsSimLoading(true);
+    setSimulationResult(null);
+    setSimulationStarted(true);
+
+    // Ask LLM to pick best canned video ID
+    fetch("/api/canned-similar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages, language: lang }),
+    })
+      .then(async (pickRes) => {
+        if (!pickRes.ok) throw new Error("Pick canned failed");
+        const pickData = await pickRes.json();
+        const scenarioId =
+          pickData?.scenarioId ||
+          relatedScenarios[0]?.id ||
+          cannedVideos[0]?.scenarioId;
+        const scenario =
+          relatedScenarios.find((s) => s.id === scenarioId) ||
+          findScenarioById(scenarioId) ||
+          relatedScenarios[0];
+
+        return { scenarioId, scenario };
+      })
+      .then(async ({ scenarioId, scenario }) => {
+        const res = await fetch("/api/video", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scenarioId }),
+        });
+        if (!res.ok) throw new Error("Similar simulation failed");
+        const data = await res.json();
+
+        setSimulationResult({
+          image: data.fallbackImage,
+          url: data.url,
+          source: data.source,
+        });
+        setShowAnalysis(true);
+        setShowEmotionPanel(false);
+
+        const simMsg: ChatMessage = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content:
+            lang === "ko"
+              ? "비슷한 상황을 시뮬레이션했어요. 시뮬레이션을 보고 어떻게 대답해야될지 작성해보세요."
+              : "Generated a similar scenario. Check the viewer on the right.",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, simMsg]);
+        setEvaluationPending(true);
+        setEvaluationContext(
+          lang === "ko"
+            ? `유사 상황: ${scenario.korean}`
+            : `Similar scenario: ${scenario.korean}`
+        );
+      })
+      .catch((err) => {
+        console.error(err);
+        setSimulationResult({
+          image: undefined,
+          url: undefined,
+          source: "error",
+        });
+      })
+      .finally(() => setIsSimLoading(false));
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* 헤더 */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-amber-50 via-white to-amber-100">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -left-10 w-80 h-80 bg-amber-100 rounded-full blur-3xl opacity-25 animate-pulse" />
+        <div className="absolute top-10 right-0 w-64 h-64 bg-amber-200 rounded-full blur-3xl opacity-20 animate-[pulse_6s_ease-in-out_infinite]" />
+        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-yellow-50 rounded-full blur-3xl opacity-25 animate-[pulse_7s_ease-in-out_infinite]" />
+      </div>
+      {/* Header */}
+      <header className="relative z-10 w-full bg-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
-              <div className="text-3xl">🌉</div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {t("app.title")}
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-600">
-                  {t("app.subtitle")}
-                </p>
-              </div>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg" />
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-700 bg-clip-text text-transparent">
+                chomchom
+              </h1>
             </div>
             <div className="flex items-center gap-3">
               <LanguageSelector />
-              {showAnalysis && (
+              {mode !== null && (
                 <button
                   onClick={handleNewConversation}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:shadow-lg transition-all text-sm font-medium"
+                  className="px-4 py-2 bg-gray-900 text-white rounded-full hover:shadow-lg hover:scale-105 transition-all text-sm font-semibold"
                 >
                   {t("chat.newChat")}
                 </button>
@@ -179,81 +422,70 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 메인 컨텐츠 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {mode === null ? (
-          // 모드 선택 화면
-          <div className="h-[calc(100vh-12rem)]">
+          // Mode Selection Screen
+          <div className="flex items-center justify-center h-[calc(100vh-15rem)]">
             <ModeSelector onSelectMode={handleSelectMode} />
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 왼쪽: 채팅 인터페이스 */}
-            <div className="lg:sticky lg:top-6 h-[calc(100vh-12rem)]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left: Chat Interface */}
+            <div className="h-[calc(100vh-12rem)]">
               <ChatInterface
                 messages={messages}
                 onSendMessage={handleSendMessage}
+                onOpenReport={handleAnalyzeReport}
+                reportEnabled={reportEnabled}
                 isLoading={isLoading}
                 mode={mode}
                 onChangeMode={handleChangeMode}
+                ctaStage={ctaStage}
+                onContinueCTA={handleContinueCTA}
+                onAnalyzeCTA={handleAnalyzeCTA}
+                onOpenSimulationOptions={() => setCtaStage("post-analysis")}
+                onSimulateCurrent={handleSimulateCurrent}
+                onSimulateSimilar={handleSimulateSimilar}
+                simulationResult={simulationResult}
+                simulationLoading={isSimLoading}
+                evaluationPending={evaluationPending}
               />
             </div>
 
-            {/* 오른쪽: 분석 결과 및 솔루션 */}
+            {/* Right: Simulation & Analysis */}
             <div className="space-y-6">
+              {simulationStarted && (
+                <SimulationPanel
+                  result={simulationResult}
+                  loading={isSimLoading}
+                />
+              )}
+
+              {showAnalysis && showEmotionPanel && analysis && (
+                <EmotionAnalysis analysis={analysis} />
+              )}
+              {showAnalysis && solution && <SolutionCard solution={solution} />}
+
               {!showAnalysis && (
-                <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-                  <div className="text-6xl mb-4">💬</div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-8 text-center">
+                  <div className="text-6xl mb-4 animate-bounce">🧭</div>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
                     {lang === "ko"
-                      ? "어떤 이야기를 나눠볼까요?"
-                      : "What would you like to talk about?"}
+                      ? "어떤 대화가 고민되시나요?"
+                      : "What conversation is on your mind?"}
                   </h2>
                   <p className="text-gray-600 max-w-md mx-auto">
                     {lang === "ko"
-                      ? "한국에서 겪은 문화적 갈등이나 이해하기 어려웠던 상황을 편하게 이야기해주세요. AI가 함께 이해하고 해결 방법을 찾아드립니다."
-                      : "Share your cultural conflicts or confusing situations you've experienced in Korea. Our AI will help you understand and find solutions together."}
+                      ? "한국에서 겪은 어려운 대화나 상황을 알려주세요. 맥락을 분석하고 더 나은 소통 방법을 제안해드릴게요."
+                      : "Tell us about a difficult conversation or situation you've faced in Korea. We'll analyze the context and suggest better ways to communicate."}
                   </p>
                 </div>
-              )}
-
-              {showAnalysis && analysis && (
-                <>
-                  <EmotionAnalysis analysis={analysis} />
-
-                  {solution && <SolutionCard solution={solution} />}
-
-                  {selectedScenario && (
-                    <VideoSimulation
-                      scenarioId={selectedScenario.id}
-                      scenarioTitle={selectedScenario.korean}
-                    />
-                  )}
-
-                  {relatedScenarios.length > 0 && (
-                    <LearningOptions
-                      scenarios={relatedScenarios}
-                      onSelectScenario={handleSelectScenario}
-                    />
-                  )}
-                </>
               )}
             </div>
           </div>
         )}
       </div>
-
-      {/* 푸터 */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center text-sm text-gray-600">
-            <p>© 2024 CultureBridge. 이주민의 한국 문화 적응을 돕습니다.</p>
-            <p className="mt-2 text-xs text-gray-500">
-              Powered by Google Gemini AI & Claude API
-            </p>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }

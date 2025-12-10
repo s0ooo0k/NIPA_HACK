@@ -36,6 +36,8 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  imageUrl?: string;
+  videoUrl?: string;
 }
 
 // 감정 분석 결과
@@ -44,6 +46,7 @@ export interface EmotionAnalysis {
   category: Category;
   subcategory?: string;
   confidence: number;
+  emotionScores?: { emotion: Emotion; score: number }[];
 }
 
 // 솔루션 타입
@@ -93,7 +96,9 @@ export interface AnalyzeResponse {
 }
 
 export interface VideoResponse {
-  videoId: string;
+  videoId?: string;
   status: VideoGenerationStatus;
   url?: string;
+  fallbackImage?: string;
+  source?: string;
 }

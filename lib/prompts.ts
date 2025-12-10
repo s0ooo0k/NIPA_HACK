@@ -3,48 +3,65 @@ import { ChatMessage } from "@/types";
 // 시스템 프롬프트 - 대화형 상황 파악 (다국어 지원)
 export function getChatSystemPrompt(language: "ko" | "en" = "ko"): string {
   if (language === "en") {
-<<<<<<< Updated upstream
-    return `You are CultureBridge, a warm and empathetic AI counselor helping foreigners and immigrants adapt to Korean culture.
-=======
-    return `You are chomchom, an AI counselor helping foreigners adapt to Korean culture.
->>>>>>> Stashed changes
+    return `You are chomchom, a warm and empathetic AI counselor helping foreigners and immigrants adapt to Korean culture.
 
-Role:
-- Understand cultural conflicts through 2-3 conversation turns
-- Express empathy with simple questions
-- Explain Korean culture objectively
+Your Role:
+- Help users understand cultural conflicts they experience through natural conversation
+- Gather sufficient context through 2-3 conversation turns
+- Acknowledge emotions and express empathy first
+- Explain Korean culture objectively without criticism
 
-Response Style - IMPORTANT:
-- Keep responses to 2-3 sentences maximum
-- Be concise and direct
-- Avoid repetition
-- Always include Korean phrases with romanization when relevant
-- Example: "That's '눈치' (nun-chi) - Korean social awareness"
+Conversation Guidelines:
+1. Listen carefully and express empathy
+2. Ask natural questions to understand specific situations
+3. Identify emotional states ("How did that make you feel?")
+4. Inform users when enough information is gathered to start analysis
 
-Tone: Warm, friendly, brief
+Response Format - IMPORTANT:
+- Respond in: English
+- When explaining Korean customs, ALWAYS include:
+  * English explanation
+  * Korean phrase with romanization
+  * Example: "In Korea, say '감사합니다' (gam-sa-ham-ni-da) meaning 'thank you'"
+- Be culturally sensitive and empathetic
+
+Tone:
+- Warm and friendly
+- Natural conversational style
+- Use empathetic language
 
 Example:
-User: "Professor asked '밥 먹었어?' and I waited for lunch but he didn't come"
-AI: "That must have been confusing! How did you feel waiting there?"
+User: "Something weird happened with my professor today..."
+AI: "I'm here to listen. Can you tell me what happened?"
+User: "He asked '밥 먹었어?' so I thought it was a lunch invitation and waited, but no one came"
+AI: "Oh, I can imagine that must have been confusing and frustrating. How did you feel waiting there alone?"
 `;
   }
 
-  return `당신은 chomchom, 한국 문화 적응을 돕는 AI 상담사입니다.
+  return `당신은 한국에 적응 중인 외국인과 이주민을 돕는 따뜻하고 공감적인 AI 상담사입니다.
 
 역할:
-- 문화적 갈등 상황을 2-3턴 대화로 파악
-- 공감과 간단한 질문으로 상황 이해
-- 한국 문화를 객관적으로 설명
+- 사용자가 겪은 문화적 갈등 상황을 자연스러운 대화로 파악합니다
+- 2-3턴의 대화로 충분한 맥락을 수집합니다
+- 감정을 인정하고 공감을 먼저 표현합니다
+- 한국 문화를 비판하지 않고 객관적으로 설명합니다
 
-응답 스타일 - 중요:
-- 2-3문장으로 짧고 간결하게 답변
-- 핵심만 전달
-- 불필요한 반복 금지
-- 친근하고 따뜻한 톤 유지
+대화 가이드라인:
+1. 사용자의 이야기를 경청하고 공감을 표현하세요
+2. 구체적인 상황을 파악하기 위해 자연스럽게 질문하세요
+3. 감정 상태를 파악하세요 ("그때 기분이 어땠어요?")
+4. 충분한 정보가 모이면 분석을 시작할 수 있다고 안내하세요
+
+톤:
+- 따뜻하고 친근한 말투
+- 격식을 차리지 않은 자연스러운 대화
+- 공감과 이해를 표현하는 언어 사용
 
 예시:
-사용자: "교수님이 밥 먹었어?라고 물어봐서 점심 약속인 줄 알고 기다렸는데 안 왔어요"
-AI: "아 그랬구나, 혼자 기다리셨겠네요. 그때 기분이 어땠어요?"
+사용자: "오늘 교수님이랑 이상한 일이 있었어..."
+AI: "어떤 상황이었는지 편하게 얘기해줄래요?"
+사용자: "밥 먹었어?라고 하셔서 점심 약속인 줄 알고 기다렸는데 아무도 안 왔어"
+AI: "아 그랬구나... 혼자 기다리고 계셨겠네요. 그때 기분이 어땠어요?"
 `;
 }
 
@@ -57,16 +74,17 @@ export function getEmotionAnalysisPrompt(
   language: "ko" | "en" = "ko"
 ): string {
   if (language === "en") {
-    return `Analyze the cultural conflict situation from the following conversation.
+    return `Analyze the cultural conflict situation from the following conversation. Include granular emotion scores.
 
 Conversation:
 ${conversation}
 
-Provide analysis in the following JSON format:
+Return JSON in this shape (only JSON):
 {
   "emotions": array of applicable emotions from ["confusion", "embarrassment", "frustration", "anger", "sadness", "loneliness", "anxiety"],
-  "category": one of "school" | "workplace" | "daily" | "relationship",
-  "subcategory": specific subcategory (e.g., "professor relationship", "group project", "boss relationship"),
+  "emotion_scores": [{ "emotion": "frustration", "score": 0-100 }, { "emotion": "sadness", "score": 0-100 }], // include only applicable emotions, sorted desc by score
+  "category": "school" | "workplace" | "daily" | "relationship",
+  "subcategory": "specific subcategory (e.g., professor relationship, group project, boss relationship)",
   "confidence": confidence score between 0.0 and 1.0,
   "situation_summary": "situation summary (1-2 sentences)",
   "cultural_context": "explanation of Korean cultural context",
@@ -74,41 +92,36 @@ Provide analysis in the following JSON format:
 }
 
 Emotion categories:
-- confusion: confusion
-- embarrassment: embarrassment/shame
-- frustration: frustration
-- anger: anger
-- sadness: sadness
-- loneliness: loneliness
-- anxiety: anxiety
+- confusion, embarrassment, frustration, anger, sadness, loneliness, anxiety
 
 Situation categories:
 - school: school life (classes, professor relations, group projects)
 - workplace: workplace (boss, colleagues, company dinners)
 - daily: daily life (landlord, neighbors, administrative tasks)
 - relationship: interpersonal relationships (friends, romantic partners, gatherings)
-`;
+Only return valid JSON.`;
   }
 
-  return `다음 대화에서 사용자가 겪은 문화적 갈등 상황을 분석해주세요.
+  return `다음 대화에서 사용자 감정과 맥락을 분석해줘. 감정별 점수를 퍼센트(0~100)로 포함해.
 
-대화 내용:
+대화내용:
 ${conversation}
 
-다음 형식의 JSON으로 분석 결과를 제공해주세요:
+다음 JSON 형식만 반환:
 {
-  "emotions": ["confusion", "embarrassment", "frustration", "anger", "sadness", "loneliness", "anxiety"] 중 해당되는 감정들,
-  "category": "school" | "workplace" | "daily" | "relationship" 중 하나,
-  "subcategory": "교수 관계", "조별과제", "상사 관계" 등 구체적 하위 카테고리,
-  "confidence": 0.0 ~ 1.0 사이의 신뢰도,
+  "emotions": ["confusion", "embarrassment", "frustration", "anger", "sadness", "loneliness", "anxiety"] 중 적용 감정들,
+  "emotion_scores": [{ "emotion": "frustration", "score": 0-100 }, { "emotion": "sadness", "score": 0-100 }], // 적용 감정만 포함, 점수 내림차순
+  "category": "school" | "workplace" | "daily" | "relationship",
+  "subcategory": "교수 관계, 조별과제, 상사 관계 등 구체적 하위 카테고리",
+  "confidence": 0.0 ~ 1.0 사이 점수,
   "situation_summary": "상황 요약 (1-2문장)",
-  "cultural_context": "한국 문화적 맥락 설명",
+  "cultural_context": "한국 문화적 배경 설명",
   "keywords": ["관련", "키워드", "배열"]
 }
 
 감정 카테고리:
 - confusion: 혼란
-- embarrassment: 당혹/수치
+- embarrassment: 당황/수치
 - frustration: 좌절
 - anger: 분노
 - sadness: 슬픔
@@ -118,12 +131,11 @@ ${conversation}
 상황 카테고리:
 - school: 학교생활 (수업, 교수관계, 조별과제)
 - workplace: 직장생활 (상사, 동료, 회식문화)
-- daily: 일상생활 (집주인, 이웃, 행정처리)
-- relationship: 대인관계 (친구, 연인, 모임)
-`;
+- daily: 일상생활 (집주인/이웃, 행정처리)
+- relationship: 인간관계(친구, 연인, 모임)
+JSON만 반환해줘.`;
 }
 
-// 솔루션 생성 프롬프트 (다국어 지원)
 export function getSolutionPrompt(
   situation: string,
   emotions: string[],
@@ -155,25 +167,25 @@ Guidelines:
 `;
   }
 
-  return `다음 문화적 갈등 상황에 대한 솔루션을 제공해주세요.
+  return `사용자가 겪은 다음 문화적 갈등 상황에 대한 솔루션을 제공해주세요.
 
 상황: ${situation}
 감정: ${emotions.join(", ")}
 카테고리: ${category}
 
-JSON 형식:
+다음 형식의 JSON으로 솔루션을 제공해주세요:
 {
-  "culturalContext": "한국 문화적 배경 (2문장)",
-  "explanation": "왜 이런 일이 발생했는지 (2문장으로 자세히)",
-  "correctResponse": "다음 대응 방법 (1-2문장, 구체적 예시 포함)",
-  "additionalTips": ["팁 1 (1문장)", "팁 2 (1문장)", "팁 3 (1문장)"]
+  "culturalContext": "이 상황의 한국 문화적 배경 설명 (2-3문장)",
+  "explanation": "왜 이런 일이 발생했는지 객관적으로 설명 (2-3문장)",
+  "correctResponse": "다음에는 이렇게 대응하면 좋습니다 (구체적 예시)",
+  "additionalTips": ["추가 팁 1", "추가 팁 2", "추가 팁 3"]
 }
 
-중요 규칙:
-- culturalContext, explanation, correctResponse는 충분한 설명 제공
-- 마크다운 서식 절대 사용 금지 (**, *, #, - 등)
-- 평문으로만 작성
-- 핵심 내용을 명확하게 전달
+가이드라인:
+- 한국 문화를 비판하지 말고 객관적으로 설명하세요
+- 실용적이고 구체적인 조언을 제공하세요
+- 따뜻하고 공감적인 톤을 유지하세요
+- 사용자의 감정을 인정하세요
 `;
 }
 
@@ -205,6 +217,25 @@ export function getRelatedScenariosPrompt(
 `;
 }
 
+// Canned 영상 후보 중 최적 선택 프롬프트
+export function getBestCannedVideoPrompt(
+  conversation: string,
+  candidates: { id: string; title: string }[]
+): string {
+  return `다음 대화 내용을 바탕으로, 아래 제공된 후보 ID 중에서 가장 비슷한 한국 문화 상황을 1개 선택해주세요.
+
+대화:
+${conversation}
+
+후보 목록 (id: 제목):
+${candidates.map((c) => `- ${c.id}: ${c.title}`).join("\n")}
+
+반환 형식(JSON):
+{
+  "id": "선택한 후보 id"
+}`;
+}
+
 // 대화 히스토리를 문자열로 변환
 export function formatConversationHistory(messages: ChatMessage[]): string {
   return messages
@@ -213,6 +244,19 @@ export function formatConversationHistory(messages: ChatMessage[]): string {
       return `${role}: ${msg.content}`;
     })
     .join("\n");
+}
+
+// Build a visual simulation prompt from a free-form conversation
+export function buildSimulationPromptFromConversation(
+  messages: ChatMessage[]
+): string {
+  const history = formatConversationHistory(messages);
+  return [
+    "Create one illustrative scene (image only, no text on the image) that captures the Korean cultural misunderstanding in this conversation.",
+    "Realistic human characters (photorealistic people), warm modern style, soft lighting, subtle gradients. Show a gentle resolution cue.",
+    "Conversation transcript:",
+    history,
+  ].join("\n");
 }
 
 // 비디오 프롬프트 생성
